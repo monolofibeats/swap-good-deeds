@@ -106,14 +106,16 @@ export const Navbar = () => {
 
         {/* User Section */}
         <div className="flex items-center gap-3">
-          {/* Points Badge */}
+          {/* Points Badge - Clickable */}
           {profile && (
-            <div className="hidden sm:flex items-center gap-2 rounded-full bg-muted px-4 py-2">
-              <Leaf className="h-4 w-4 text-primary" />
-              <span className="font-semibold text-sm">
-                {profile.swap_points.toLocaleString()} pts
-              </span>
-            </div>
+            <Link to="/points-history">
+              <div className="hidden sm:flex items-center gap-2 rounded-full bg-muted px-4 py-2 hover:bg-muted/80 transition-colors cursor-pointer">
+                <Leaf className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">
+                  {profile.swap_points.toLocaleString()} pts
+                </span>
+              </div>
+            </Link>
           )}
 
           {/* User Menu */}
