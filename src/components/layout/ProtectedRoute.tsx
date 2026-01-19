@@ -29,9 +29,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Redirect to onboarding if not completed (but allow access to onboarding page itself)
-  if (profile && !profile.onboarding_completed && location.pathname !== "/onboarding") {
+  // Redirect to onboarding if not completed (but allow access to onboarding page itself and supporter application)
+  const onboardingPaths = ["/onboarding", "/supporter-application"];
+  if (profile && !profile.onboarding_completed && !onboardingPaths.includes(location.pathname)) {
     return <Navigate to="/onboarding" replace />;
+  }
+
+  // Redirect approved supporters to supporter dashboard when accessing main index
+  const userType = (profile as any)?.user_type;
+  if (userType === "supporter" && location.pathname === "/" && !isAdmin) {
+    return <Navigate to="/supporter" replace />;
   }
 
   if (requireAdmin && !isAdmin) {

@@ -658,6 +658,60 @@ export type Database = {
           },
         ]
       }
+      supporter_applications: {
+        Row: {
+          about_them: string
+          admin_note: string | null
+          company_name: string
+          company_size: string
+          created_at: string
+          id: string
+          industry: string
+          location: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+          what_they_offer: string
+          why_supporter: string
+          yearly_revenue: string | null
+        }
+        Insert: {
+          about_them: string
+          admin_note?: string | null
+          company_name: string
+          company_size: string
+          created_at?: string
+          id?: string
+          industry: string
+          location: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+          what_they_offer: string
+          why_supporter: string
+          yearly_revenue?: string | null
+        }
+        Update: {
+          about_them?: string
+          admin_note?: string | null
+          company_name?: string
+          company_size?: string
+          created_at?: string
+          id?: string
+          industry?: string
+          location?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+          what_they_offer?: string
+          why_supporter?: string
+          yearly_revenue?: string | null
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_type: Database["public"]["Enums"]["badge_type"]
@@ -748,6 +802,10 @@ export type Database = {
       increment_quest_impressions: {
         Args: { quest_id: string }
         Returns: undefined
+      }
+      is_conversation_participant: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
       }
       process_referral: {
         Args: { p_new_user_id: string; p_referral_code: string }

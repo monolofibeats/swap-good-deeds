@@ -20,6 +20,22 @@ const Onboarding = () => {
 
     setIsLoading(true);
     
+    // If they chose supporter, redirect to application form
+    if (selectedType === "supporter") {
+      // Mark onboarding as complete but don't set user_type yet (pending approval)
+      await supabase
+        .from("profiles")
+        .update({ 
+          onboarding_completed: true 
+        })
+        .eq("user_id", user.id);
+      
+      await refreshProfile();
+      navigate("/supporter-application");
+      return;
+    }
+    
+    // For changemakers, set type immediately
     const { error } = await supabase
       .from("profiles")
       .update({ 
@@ -54,12 +70,12 @@ const Onboarding = () => {
     {
       type: "supporter" as UserType,
       title: "Supporter",
-      description: "I want to support changemakers by offering services or rewards",
+      description: "I represent a business and want to support changemakers",
       details: [
-        "Offer showers, meals, or beds",
-        "Provide reward vouchers for partners",
-        "Create opportunities for helpers",
-        "Support your local community",
+        "Offer rewards like meals, showers, or stays",
+        "Create listings for help (e.g., dishwashing)",
+        "Support the community",
+        "Requires admin approval",
       ],
       icon: Gift,
       color: "bg-swap-gold/20 text-swap-gold border-swap-gold/30",
@@ -139,18 +155,20 @@ const Onboarding = () => {
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Setting up your account...
+              {selectedType === "supporter" ? "Continuing to application..." : "Setting up your account..."}
             </>
           ) : (
             <>
-              Continue
+              {selectedType === "supporter" ? "Continue to Application" : "Continue"}
               <ArrowRight className="h-4 w-4" />
             </>
           )}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">
-          You can change this later in your settings
+          {selectedType === "supporter" 
+            ? "Supporter accounts require admin approval" 
+            : "You can change this later in your settings"}
         </p>
       </div>
     </div>
