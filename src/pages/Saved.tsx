@@ -1,80 +1,63 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { QuestCard } from "@/components/quests/QuestCard";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Loader2, MapPin, Sparkles } from "lucide-react";
+import { Loader2, Star, Sparkles } from "lucide-react";
 
-const Index = () => {
-  const [quests, setQuests] = useState<any[]>([]);
-  const [listings, setListings] = useState<any[]>([]);
+const Saved = () => {
+  const { user } = useAuth();
+  const [savedQuests, setSavedQuests] = useState<any[]>([]);
+  const [savedListings, setSavedListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) fetchSaved();
+  }, [user]);
 
-  const fetchData = async () => {
+  const fetchSaved = async () => {
     setLoading(true);
-    const [questsRes, listingsRes] = await Promise.all([
-      supabase.from("quests").select("*").eq("is_active", true).order("created_at", { ascending: false }),
-      supabase.from("listings").select("*").eq("status", "approved").order("created_at", { ascending: false }),
-    ]);
-    setQuests(questsRes.data || []);
-    setListings(listingsRes.data || []);
+    
+    // Fetch favorites with quest data
+    const { data: questFavorites } = await supabase
+      .from("favorites")
+      .select("quest_id, quests(*)")
+      .eq("user_id", user!.id)
+      .not("quest_id", "is", null);
+
+    // Fetch favorites with listing data
+    const { data: listingFavorites } = await supabase
+      .from("favorites")
+      .select("listing_id, listings(*)")
+      .eq("user_id", user!.id)
+      .not("listing_id", "is", null);
+
+    setSavedQuests(questFavorites?.map(f => f.quests).filter(Boolean) || []);
+    setSavedListings(listingFavorites?.map(f => f.listings).filter(Boolean) || []);
     setLoading(false);
   };
-
-  const filteredQuests = quests.filter(q => 
-    q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    q.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    q.location_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredListings = listings.filter(l =>
-    l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    l.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    l.location_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Discover Good Deeds</h1>
-            <p className="text-muted-foreground">Complete quests and help your community</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 md:w-80">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search quests & listings..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline" size="icon" title="Distance filter (coming soon)">
-              <MapPin className="h-4 w-4" />
-            </Button>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Star className="h-8 w-8 text-swap-gold" />
+            Saved for Later
+          </h1>
+          <p className="text-muted-foreground">Your bookmarked quests and listings</p>
         </div>
 
-        {/* Tabs */}
         <Tabs defaultValue="quests" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="quests" className="gap-2">
               <Sparkles className="h-4 w-4" />
-              Quests ({filteredQuests.length})
+              Quests ({savedQuests.length})
             </TabsTrigger>
             <TabsTrigger value="listings" className="gap-2">
-              Listings ({filteredListings.length})
+              Listings ({savedListings.length})
             </TabsTrigger>
           </TabsList>
 
@@ -85,11 +68,15 @@ const Index = () => {
           ) : (
             <>
               <TabsContent value="quests" className="mt-6">
-                {filteredQuests.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">No quests found</div>
+                {savedQuests.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Star className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p>No saved quests yet</p>
+                    <p className="text-sm">Click the star on any quest to save it here</p>
+                  </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredQuests.map((quest) => (
+                    {savedQuests.map((quest: any) => (
                       <QuestCard
                         key={quest.id}
                         id={quest.id}
@@ -110,11 +97,15 @@ const Index = () => {
               </TabsContent>
 
               <TabsContent value="listings" className="mt-6">
-                {filteredListings.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">No listings found</div>
+                {savedListings.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Star className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p>No saved listings yet</p>
+                    <p className="text-sm">Click the star on any listing to save it here</p>
+                  </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredListings.map((listing) => (
+                    {savedListings.map((listing: any) => (
                       <ListingCard
                         key={listing.id}
                         id={listing.id}
@@ -141,4 +132,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Saved;

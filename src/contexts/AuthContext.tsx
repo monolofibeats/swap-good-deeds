@@ -7,6 +7,10 @@ interface Profile {
   user_id: string;
   display_name: string;
   swap_points: number;
+  xp: number;
+  level: number;
+  avatar_url: string | null;
+  referral_code: string;
   created_at: string;
   updated_at: string;
 }

@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Leaf, Loader2, AlertCircle } from "lucide-react";
+import { Leaf, Loader2, AlertCircle, Gift } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -17,6 +18,7 @@ const displayNameSchema = z.string().min(2, "Display name must be at least 2 cha
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { signIn, signUp, user } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +32,15 @@ const Auth = () => {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupDisplayName, setSignupDisplayName] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+
+  // Get referral code from URL
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setReferralCode(ref);
+    }
+  }, [searchParams]);
 
   // Redirect if already logged in
   if (user) {
@@ -82,6 +93,21 @@ const Auth = () => {
     
     setIsLoading(true);
     const { error: authError } = await signUp(signupEmail, signupPassword, signupDisplayName);
+    
+    if (!authError && referralCode) {
+      // Process referral after successful signup
+      // Wait a moment for the trigger to create the profile
+      setTimeout(async () => {
+        const { data: { user: newUser } } = await supabase.auth.getUser();
+        if (newUser) {
+          await supabase.rpc("process_referral", {
+            p_new_user_id: newUser.id,
+            p_referral_code: referralCode,
+          });
+        }
+      }, 1000);
+    }
+    
     setIsLoading(false);
     
     if (authError) {
@@ -109,6 +135,17 @@ const Auth = () => {
           </div>
         </div>
 
+        {/* Referral Banner */}
+        {referralCode && (
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-swap-gold/10 border border-swap-gold/20">
+            <Gift className="h-5 w-5 text-swap-gold flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-swap-gold">You've been invited!</p>
+              <p className="text-xs text-muted-foreground">Sign up to start earning points</p>
+            </div>
+          </div>
+        )}
+
         {/* Auth Card */}
         <Card className="border-border/50 bg-card/50 backdrop-blur">
           <CardHeader className="text-center">
@@ -125,7 +162,7 @@ const Auth = () => {
               </Alert>
             )}
             
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs defaultValue={referralCode ? "signup" : "login"} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Log In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -203,6 +240,20 @@ const Auth = () => {
                       disabled={isLoading}
                     />
                   </div>
+                  {!referralCode && (
+                    <div className="space-y-2">
+                      <Label htmlFor="referral-code">Referral Code (optional)</Label>
+                      <Input
+                        id="referral-code"
+                        type="text"
+                        placeholder="ABCD12"
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                        disabled={isLoading}
+                        maxLength={6}
+                      />
+                    </div>
+                  )}
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <>
