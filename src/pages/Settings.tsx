@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -11,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Camera, User, Trophy, Star, Copy, Check, Share2, Moon, Sun } from "lucide-react";
+import { Loader2, Camera, User, Trophy, Star, Copy, Check, Share2, Moon, Sun, Heart, Sparkles, MessageSquare, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Level calculation: XP needed = level^2 * 25
@@ -22,6 +23,7 @@ const xpForNextLevel = (level: number) => Math.pow(level, 2) * 25;
 const Settings = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
@@ -29,6 +31,8 @@ const Settings = () => {
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [togglingRole, setTogglingRole] = useState(false);
+  const [requestingSupport, setRequestingSupport] = useState(false);
 
   // Check current theme on mount
   useEffect(() => {
@@ -40,10 +44,79 @@ const Settings = () => {
   const currentLevel = (profile as any)?.level || calculateLevel(currentXp);
   const avatarUrl = (profile as any)?.avatar_url;
   const referralCode = (profile as any)?.referral_code || "LOADING";
+  const currentUserType = (profile as any)?.user_type as string | null;
   
   const xpInCurrentLevel = currentXp - xpForLevel(currentLevel);
   const xpNeededForNext = xpForNextLevel(currentLevel) - xpForLevel(currentLevel);
   const levelProgress = xpNeededForNext > 0 ? (xpInCurrentLevel / xpNeededForNext) * 100 : 100;
+
+  const isChangemaker = currentUserType === "helper";
+  const isSupporter = currentUserType === "supporter";
+  const isBoth = currentUserType === null; // We'll use null to represent "both"
+
+  const toggleUserType = async (type: "helper" | "supporter" | null) => {
+    if (!user) return;
+    setTogglingRole(true);
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({ user_type: type })
+      .eq("user_id", user.id);
+    
+    setTogglingRole(false);
+    if (error) {
+      toast({ title: "Failed to update", description: error.message, variant: "destructive" });
+    } else {
+      await refreshProfile();
+      toast({ title: "Role updated!" });
+    }
+  };
+
+  const requestSupport = async () => {
+    if (!user) return;
+    setRequestingSupport(true);
+    
+    try {
+      // Create a support conversation
+      const { data: conv, error: convError } = await supabase
+        .from("conversations")
+        .insert({
+          conversation_type: "support",
+          created_by: user.id,
+          title: "Support Request",
+        })
+        .select()
+        .single();
+      
+      if (convError) throw convError;
+      
+      // Add user as participant
+      await supabase.from("conversation_participants").insert({
+        conversation_id: conv.id,
+        user_id: user.id,
+      });
+      
+      // Create support ticket
+      await supabase.from("support_tickets").insert({
+        user_id: user.id,
+        conversation_id: conv.id,
+      });
+      
+      // Send initial message
+      await supabase.from("messages").insert({
+        conversation_id: conv.id,
+        sender_id: user.id,
+        content: "Hi! I need help with something.",
+      });
+      
+      toast({ title: "Support request created!", description: "We'll get back to you soon." });
+      navigate("/messages");
+    } catch (error: any) {
+      toast({ title: "Failed to create support request", description: error.message, variant: "destructive" });
+    } finally {
+      setRequestingSupport(false);
+    }
+  };
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -326,6 +399,114 @@ const Settings = () => {
             </div>
             <p className="text-sm text-muted-foreground">
               When someone signs up using your link, you'll receive 100 SWAP Points and 200 XP!
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Role Management Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-swap-gold" />
+              Your Role
+            </CardTitle>
+            <CardDescription>Choose how you want to participate in SWAP</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3">
+              <div
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  isChangemaker ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => !togglingRole && toggleUserType("helper")}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-swap-green/20 flex items-center justify-center">
+                      <Heart className="h-5 w-5 text-swap-green" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Changemaker Only</p>
+                      <p className="text-sm text-muted-foreground">Complete quests and help with listings</p>
+                    </div>
+                  </div>
+                  {isChangemaker && <Check className="h-5 w-5 text-primary" />}
+                </div>
+              </div>
+
+              <div
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  isSupporter ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => !togglingRole && toggleUserType("supporter")}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-swap-sky/20 flex items-center justify-center">
+                      <Sparkles className="h-5 w-5 text-swap-sky" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Supporter Only</p>
+                      <p className="text-sm text-muted-foreground">Provide resources like stays, meals, etc.</p>
+                    </div>
+                  </div>
+                  {isSupporter && <Check className="h-5 w-5 text-primary" />}
+                </div>
+              </div>
+
+              <div
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  isBoth ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => !togglingRole && toggleUserType(null)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-swap-gold/20 flex items-center justify-center">
+                      <Star className="h-5 w-5 text-swap-gold" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Both</p>
+                      <p className="text-sm text-muted-foreground">Be a changemaker and a supporter</p>
+                    </div>
+                  </div>
+                  {isBoth && <Check className="h-5 w-5 text-primary" />}
+                </div>
+              </div>
+            </div>
+            {togglingRole && (
+              <div className="flex justify-center">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Support Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-swap-earth" />
+              Need Help?
+            </CardTitle>
+            <CardDescription>Get support from the SWAP team</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={requestSupport}
+              variant="outline"
+              className="w-full gap-2"
+              disabled={requestingSupport}
+            >
+              {requestingSupport ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MessageSquare className="h-4 w-4" />
+              )}
+              Start Support Chat
+            </Button>
+            <p className="text-sm text-muted-foreground mt-2 text-center">
+              Our team will respond as soon as possible
             </p>
           </CardContent>
         </Card>

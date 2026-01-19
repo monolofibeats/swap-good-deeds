@@ -42,6 +42,19 @@ serve(async (req) => {
 
     const { recipientUserId, senderUserId, itemType, itemId, itemTitle, message }: ContactNotificationRequest = await req.json();
 
+    // Validate UUIDs - skip if empty (like SWAP Team quests)
+    if (!recipientUserId || recipientUserId.trim() === "") {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "This is a system-created item, no message sent.",
+          conversationId: null,
+          emailSent: false,
+        }),
+        { headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Get sender profile
     const { data: senderProfile } = await supabase
       .from("profiles")
@@ -56,9 +69,19 @@ serve(async (req) => {
       .eq("user_id", recipientUserId)
       .single();
 
+    if (!recipientProfile) {
+      throw new Error("Recipient not found");
+    }
+
     // Get recipient email from auth.users (service role can access this)
-    const { data: recipientAuthData } = await supabase.auth.admin.getUserById(recipientUserId);
-    const recipientEmail = recipientAuthData?.user?.email;
+    let recipientEmail: string | undefined;
+    try {
+      const { data: recipientAuthData } = await supabase.auth.admin.getUserById(recipientUserId);
+      recipientEmail = recipientAuthData?.user?.email;
+    } catch (authError) {
+      console.log("Could not fetch recipient email:", authError);
+      // Continue without email - in-app message will still be sent
+    }
 
     // 1. Create a DM conversation if it doesn't exist
     // First check if a DM already exists between these users
