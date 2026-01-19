@@ -27,6 +27,7 @@ import {
   Settings,
   Star,
   Trophy,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -209,6 +210,13 @@ export const Navbar = () => {
                 </div>
               </DropdownMenuItem>
               
+              <DropdownMenuItem asChild>
+                <Link to="/my" className="flex items-center gap-2">
+                  <Layers className="h-4 w-4" />
+                  My listings & quests
+                </Link>
+              </DropdownMenuItem>
+
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
