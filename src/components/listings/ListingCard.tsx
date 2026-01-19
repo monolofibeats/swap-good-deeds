@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, HelpCircle, Briefcase, Heart } from "lucide-react";
+import { Eye, HelpCircle, Briefcase, Heart, Wrench, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LocationMap } from "@/components/shared/LocationMap";
 import { FavoriteButton } from "@/components/shared/FavoriteButton";
@@ -12,7 +12,7 @@ interface ListingCardProps {
   id: string;
   title: string;
   description: string;
-  listingType: "help_request" | "micro_job" | "good_deed_request";
+  listingType: "help_request" | "micro_job" | "good_deed_request" | "service_offer";
   locationName: string;
   locationAddress?: string;
   lat?: number | null;
@@ -20,6 +20,7 @@ interface ListingCardProps {
   photoUrls: string[];
   impressions: number;
   createdAt: string;
+  isPromoted?: boolean;
 }
 
 const listingTypeConfig = {
@@ -41,6 +42,12 @@ const listingTypeConfig = {
     color: "bg-swap-sky/10 text-swap-sky border-swap-sky/20",
     iconBg: "bg-swap-sky/20 text-swap-sky",
   },
+  service_offer: {
+    label: "Service Offer",
+    icon: Wrench,
+    color: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+    iconBg: "bg-purple-500/20 text-purple-500",
+  },
 };
 
 export const ListingCard: React.FC<ListingCardProps> = ({
@@ -55,13 +62,25 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   photoUrls,
   impressions,
   createdAt,
+  isPromoted,
 }) => {
-  const config = listingTypeConfig[listingType];
+  const config = listingTypeConfig[listingType] || listingTypeConfig.help_request;
   const Icon = config.icon;
   const displayPhotos = photoUrls.slice(0, 4);
   
   return (
-    <Card className="card-hover group overflow-hidden border-border/50 bg-card/50 backdrop-blur relative">
+    <Card className={cn(
+      "card-hover group overflow-hidden border-border/50 bg-card/50 backdrop-blur relative",
+      isPromoted && "ring-2 ring-swap-gold/50 border-swap-gold/30"
+    )}>
+      {isPromoted && (
+        <div className="absolute top-2 right-2 z-10">
+          <Badge className="bg-swap-gold text-black gap-1 text-xs">
+            <Star className="h-3 w-3 fill-current" />
+            Promoted
+          </Badge>
+        </div>
+      )}
       <Link to={`/listings/${id}`} className="block">
         {/* Photo Grid */}
         {displayPhotos.length > 0 && (

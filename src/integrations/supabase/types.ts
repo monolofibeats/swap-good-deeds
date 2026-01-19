@@ -214,12 +214,15 @@ export type Database = {
           description: string
           id: string
           impressions: number
+          is_promoted: boolean
           lat: number | null
           listing_type: Database["public"]["Enums"]["listing_type"]
           lng: number | null
           location_address: string
           location_name: string
           photo_urls: string[] | null
+          promoted_at: string | null
+          promotion_expires_at: string | null
           reviewed_at: string | null
           status: Database["public"]["Enums"]["listing_status"]
           title: string
@@ -231,12 +234,15 @@ export type Database = {
           description: string
           id?: string
           impressions?: number
+          is_promoted?: boolean
           lat?: number | null
           listing_type: Database["public"]["Enums"]["listing_type"]
           lng?: number | null
           location_address: string
           location_name: string
           photo_urls?: string[] | null
+          promoted_at?: string | null
+          promotion_expires_at?: string | null
           reviewed_at?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
           title: string
@@ -248,12 +254,15 @@ export type Database = {
           description?: string
           id?: string
           impressions?: number
+          is_promoted?: boolean
           lat?: number | null
           listing_type?: Database["public"]["Enums"]["listing_type"]
           lng?: number | null
           location_address?: string
           location_name?: string
           photo_urls?: string[] | null
+          promoted_at?: string | null
+          promotion_expires_at?: string | null
           reviewed_at?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
           title?: string
@@ -448,6 +457,51 @@ export type Database = {
         }
         Relationships: []
       }
+      promotion_purchases: {
+        Row: {
+          created_at: string
+          duration_days: number
+          expires_at: string
+          id: string
+          item_id: string
+          item_type: string
+          payment_type: string
+          points_spent: number | null
+          price_cents: number | null
+          status: string
+          stripe_session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_days?: number
+          expires_at: string
+          id?: string
+          item_id: string
+          item_type: string
+          payment_type: string
+          points_spent?: number | null
+          price_cents?: number | null
+          status?: string
+          stripe_session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          payment_type?: string
+          points_spent?: number | null
+          price_cents?: number | null
+          status?: string
+          stripe_session_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       quests: {
         Row: {
           base_points: number
@@ -456,10 +510,13 @@ export type Database = {
           id: string
           impressions: number
           is_active: boolean
+          is_promoted: boolean
           lat: number | null
           lng: number | null
           location_address: string
           location_name: string
+          promoted_at: string | null
+          promotion_expires_at: string | null
           quest_type: Database["public"]["Enums"]["quest_type"]
           title: string
         }
@@ -470,10 +527,13 @@ export type Database = {
           id?: string
           impressions?: number
           is_active?: boolean
+          is_promoted?: boolean
           lat?: number | null
           lng?: number | null
           location_address: string
           location_name: string
+          promoted_at?: string | null
+          promotion_expires_at?: string | null
           quest_type: Database["public"]["Enums"]["quest_type"]
           title: string
         }
@@ -484,10 +544,13 @@ export type Database = {
           id?: string
           impressions?: number
           is_active?: boolean
+          is_promoted?: boolean
           lat?: number | null
           lng?: number | null
           location_address?: string
           location_name?: string
+          promoted_at?: string | null
+          promotion_expires_at?: string | null
           quest_type?: Database["public"]["Enums"]["quest_type"]
           title?: string
         }
@@ -885,7 +948,11 @@ export type Database = {
         | "level_10"
         | "level_25"
       listing_status: "pending" | "approved" | "rejected"
-      listing_type: "help_request" | "micro_job" | "good_deed_request"
+      listing_type:
+        | "help_request"
+        | "micro_job"
+        | "good_deed_request"
+        | "service_offer"
       quest_type: "cleanup" | "good_deed"
       redemption_status: "issued" | "redeemed" | "expired"
       reward_category: "food" | "shower" | "bed" | "discount" | "other"
@@ -1033,7 +1100,12 @@ export const Constants = {
         "level_25",
       ],
       listing_status: ["pending", "approved", "rejected"],
-      listing_type: ["help_request", "micro_job", "good_deed_request"],
+      listing_type: [
+        "help_request",
+        "micro_job",
+        "good_deed_request",
+        "service_offer",
+      ],
       quest_type: ["cleanup", "good_deed"],
       redemption_status: ["issued", "redeemed", "expired"],
       reward_category: ["food", "shower", "bed", "discount", "other"],
