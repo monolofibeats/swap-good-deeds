@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,14 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles } from "lucide-react";
+import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   
@@ -93,24 +97,57 @@ const Admin = () => {
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
-    // Fetch details for applications
+    // Fetch details for applications - include listing type
     const applicationsWithDetails = await Promise.all(
       (applicationsData || []).map(async (app) => {
         const [listingRes, profileRes] = await Promise.all([
-          supabase.from("listings").select("title").eq("id", app.listing_id).single(),
-          supabase.from("profiles").select("display_name").eq("user_id", app.applicant_user_id).single(),
+          supabase.from("listings").select("title, listing_type, description").eq("id", app.listing_id).single(),
+          supabase.from("profiles").select("display_name, username").eq("user_id", app.applicant_user_id).single(),
         ]);
         return {
           ...app,
           listing_title: listingRes.data?.title || "Unknown Listing",
+          listing_type: listingRes.data?.listing_type || "help_request",
+          listing_description: listingRes.data?.description || "",
           user_display_name: profileRes.data?.display_name || "Unknown User",
+          user_username: profileRes.data?.username || null,
         };
       })
     );
 
+    // Fetch support tickets
+    const { data: ticketsData } = await supabase
+      .from("support_tickets")
+      .select("*")
+      .in("status", ["open", "in_progress"])
+      .order("created_at", { ascending: false });
+
+    const ticketsWithDetails = await Promise.all(
+      (ticketsData || []).map(async (ticket) => {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("display_name, username")
+          .eq("user_id", ticket.user_id)
+          .single();
+        return {
+          ...ticket,
+          user_display_name: profileData?.display_name || "Unknown User",
+          user_username: profileData?.username || null,
+        };
+      })
+    );
+
+    // Fetch all users for admin impersonation
+    const { data: usersData } = await supabase
+      .from("profiles")
+      .select("user_id, display_name, username, avatar_url, level, swap_points, user_type")
+      .order("display_name");
+
     setSubmissions(submissionsWithDetails);
     setListings(listingsWithDetails);
     setApplications(applicationsWithDetails);
+    setSupportTickets(ticketsWithDetails);
+    setUsers(usersData || []);
     setLoading(false);
   };
 
@@ -205,7 +242,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="submissions">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsList className="grid w-full max-w-4xl grid-cols-5">
             <TabsTrigger value="submissions">
               Submissions ({submissions.length})
             </TabsTrigger>
@@ -214,6 +251,12 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="applications">
               Applications ({applications.length})
+            </TabsTrigger>
+            <TabsTrigger value="support">
+              Support ({supportTickets.length})
+            </TabsTrigger>
+            <TabsTrigger value="users">
+              Users ({users.length})
             </TabsTrigger>
           </TabsList>
 
@@ -434,14 +477,42 @@ const Admin = () => {
               applications.map((a) => (
                 <Card key={a.id}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">{a.user_display_name} wants to help</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      For: {a.listing_title} • {new Date(a.created_at).toLocaleDateString()}
-                    </p>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{a.user_display_name} wants to help</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {a.user_username && <span>@{a.user_username} • </span>}
+                          {new Date(a.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => navigate(`/listing/${a.listing_id}`)}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        View Listing
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Listing Preview */}
+                    <div className="p-4 rounded-lg border border-border bg-muted/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {a.listing_type.replace("_", " ")}
+                        </Badge>
+                        <span className="font-medium">{a.listing_title}</span>
+                      </div>
+                      {a.listing_description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">{a.listing_description}</p>
+                      )}
+                    </div>
+
                     {a.message && (
                       <div className="bg-muted/50 p-4 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Application message:</p>
                         <p className="text-sm italic">"{a.message}"</p>
                       </div>
                     )}
@@ -499,6 +570,111 @@ const Admin = () => {
                 </Card>
               ))
             )}
+          </TabsContent>
+
+          {/* Support Tickets Tab */}
+          <TabsContent value="support" className="mt-6 space-y-4">
+            {supportTickets.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p>No open support tickets</p>
+                  <p className="text-sm">User support requests will appear here</p>
+                </CardContent>
+              </Card>
+            ) : (
+              supportTickets.map((ticket) => (
+                <Card key={ticket.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{ticket.user_display_name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {ticket.user_username && <span>@{ticket.user_username} • </span>}
+                          {new Date(ticket.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge variant={ticket.status === "open" ? "default" : "secondary"}>
+                        {ticket.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => navigate("/messages")}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Open Chat
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          await supabase
+                            .from("support_tickets")
+                            .update({ status: "resolved", resolved_at: new Date().toISOString() })
+                            .eq("id", ticket.id);
+                          toast({ title: "Ticket resolved" });
+                          fetchData();
+                        }}
+                        className="gap-1"
+                      >
+                        <Check className="h-4 w-4" />
+                        Mark Resolved
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="mt-6 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCog className="h-5 w-5" />
+                  All Users ({users.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                  {users.map((u) => (
+                    <div
+                      key={u.user_id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          {u.avatar_url ? (
+                            <img src={u.avatar_url} className="h-10 w-10 rounded-full object-cover" />
+                          ) : (
+                            <span className="text-sm font-medium">{u.display_name?.[0]?.toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">{u.display_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {u.username && <span>@{u.username} • </span>}
+                            Level {u.level} • {u.swap_points} pts
+                            {u.user_type && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {u.user_type}
+                              </Badge>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        ID: {u.user_id.slice(0, 8)}...
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
