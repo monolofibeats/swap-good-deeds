@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Ticket, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateEU } from "@/lib/dateUtils";
 
 const MyCodes = () => {
   const { user } = useAuth();
@@ -49,7 +50,7 @@ const MyCodes = () => {
                   <div className="space-y-1">
                     <p className="font-semibold">{r.rewards?.title}</p>
                     <p className="text-sm text-muted-foreground">{r.rewards?.partner_name}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateEU(r.created_at)}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge variant={r.status === "issued" ? "default" : "secondary"} className="capitalize">{r.status}</Badge>

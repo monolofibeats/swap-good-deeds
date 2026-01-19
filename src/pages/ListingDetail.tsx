@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Loader2, MapPin, Eye, HelpCircle, Briefcase, Heart, Check, HandHeart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateEU } from "@/lib/dateUtils";
 
 interface CreatorInfo {
   user_id: string;
@@ -134,7 +135,7 @@ const ListingDetail = () => {
                 />
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1"><Eye className="h-4 w-4" /> {listing.impressions} views</span>
-                  <span>{new Date(listing.created_at).toLocaleDateString()}</span>
+                  <span>{formatDateEU(listing.created_at)}</span>
                 </div>
               </CardContent>
             </Card>

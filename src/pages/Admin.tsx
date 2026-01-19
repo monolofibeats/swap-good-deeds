@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2 } from "lucide-react";
+import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateEU } from "@/lib/dateUtils";
 
 const Admin = () => {
   const { toast } = useToast();
@@ -291,6 +292,56 @@ const Admin = () => {
     fetchData();
   };
 
+  const askForMoreInfo = async (app: any) => {
+    if (!adminNotes[app.id]?.trim()) {
+      toast({ title: "Please add a note explaining what information is needed", variant: "destructive" });
+      return;
+    }
+    
+    setProcessing(app.id);
+    
+    await supabase
+      .from("supporter_applications")
+      .update({ 
+        status: "needs_more_info", 
+        admin_note: adminNotes[app.id]
+      })
+      .eq("id", app.id);
+    
+    setProcessing(null);
+    toast({ title: "Requested more information from applicant" }); 
+    fetchData();
+  };
+
+  const joinSupportChat = async (ticket: any) => {
+    // Add admin as participant to the conversation if not already
+    const { data: existingPart } = await supabase
+      .from("conversation_participants")
+      .select("id")
+      .eq("conversation_id", ticket.conversation_id)
+      .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+      .maybeSingle();
+    
+    if (!existingPart) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("conversation_participants").insert({
+          conversation_id: ticket.conversation_id,
+          user_id: user.id,
+          is_admin: true,
+        });
+      }
+    }
+    
+    // Update ticket status to in_progress
+    await supabase
+      .from("support_tickets")
+      .update({ status: "in_progress" })
+      .eq("id", ticket.id);
+    
+    navigate("/messages");
+  };
+
   if (loading) return <AppLayout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div></AppLayout>;
 
   return (
@@ -347,7 +398,7 @@ const Admin = () => {
                       <div>
                         <CardTitle className="text-lg">{s.quest_title}</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          Submitted by {s.user_display_name} • {new Date(s.created_at).toLocaleDateString()}
+                          Submitted by {s.user_display_name} • {formatDateEU(s.created_at)}
                         </p>
                       </div>
                       <Badge className="bg-primary/10 text-primary">
@@ -449,7 +500,7 @@ const Admin = () => {
                       <div>
                         <CardTitle className="text-lg">{l.title}</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          by {l.user_display_name} • {new Date(l.created_at).toLocaleDateString()}
+                          by {l.user_display_name} • {formatDateEU(l.created_at)}
                         </p>
                       </div>
                       <Badge variant="secondary">{l.listing_type.replace("_", " ")}</Badge>
@@ -507,7 +558,7 @@ const Admin = () => {
                         <CardTitle className="text-lg">{a.user_display_name} wants to help</CardTitle>
                         <p className="text-sm text-muted-foreground">
                           {a.user_username && <span>@{a.user_username} • </span>}
-                          {new Date(a.created_at).toLocaleDateString()}
+                          {formatDateEU(a.created_at)}
                         </p>
                       </div>
                       <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/listing/${a.listing_id}`)}>
@@ -603,7 +654,7 @@ const Admin = () => {
                           <p className="text-sm text-muted-foreground">
                             by {app.user_display_name}
                             {app.user_username && <span> (@{app.user_username})</span>}
-                            {" • "}{new Date(app.created_at).toLocaleDateString()}
+                            {" • "}{formatDateEU(app.created_at)}
                           </p>
                         </div>
                       </div>
@@ -666,6 +717,10 @@ const Admin = () => {
                         {processing === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         Approve as Supporter
                       </Button>
+                      <Button variant="outline" onClick={() => askForMoreInfo(app)} disabled={processing === app.id} className="gap-1">
+                        <HelpCircle className="h-4 w-4" />
+                        Ask for More Info
+                      </Button>
                       <Button variant="destructive" onClick={() => rejectSupporterApp(app)} disabled={processing === app.id} className="gap-1">
                         <X className="h-4 w-4" />
                         Reject
@@ -695,7 +750,7 @@ const Admin = () => {
                         <CardTitle className="text-lg">{ticket.user_display_name}</CardTitle>
                         <p className="text-sm text-muted-foreground">
                           {ticket.user_username && <span>@{ticket.user_username} • </span>}
-                          {new Date(ticket.created_at).toLocaleDateString()}
+                          {formatDateEU(ticket.created_at)}
                         </p>
                       </div>
                       <Badge variant={ticket.status === "open" ? "default" : "secondary"}>{ticket.status}</Badge>
@@ -703,9 +758,9 @@ const Admin = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex gap-2">
-                      <Button variant="outline" className="gap-1" onClick={() => navigate("/messages")}>
+                      <Button variant="outline" className="gap-1" onClick={() => joinSupportChat(ticket)}>
                         <MessageSquare className="h-4 w-4" />
-                        Open Chat
+                        Join Chat
                       </Button>
                       <Button
                         onClick={async () => {

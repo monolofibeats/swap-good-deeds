@@ -99,13 +99,29 @@ const Settings = () => {
     setRequestingSupport(true);
     
     try {
-      // Create a support conversation
+      // Check if user already has an open support ticket
+      const { data: existingTicket } = await supabase
+        .from("support_tickets")
+        .select("conversation_id")
+        .eq("user_id", user.id)
+        .in("status", ["open", "in_progress"])
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingTicket) {
+        // Navigate to existing support conversation
+        toast({ title: "Opening existing support chat" });
+        navigate("/messages");
+        return;
+      }
+      
+      // Create a support conversation (type 'dm' to work with existing RLS)
       const { data: conv, error: convError } = await supabase
         .from("conversations")
         .insert({
-          conversation_type: "support",
+          conversation_type: "dm",
           created_by: user.id,
-          title: "Support Request",
+          title: "Support Chat",
         })
         .select()
         .single();
@@ -113,27 +129,34 @@ const Settings = () => {
       if (convError) throw convError;
       
       // Add user as participant
-      await supabase.from("conversation_participants").insert({
+      const { error: partError } = await supabase.from("conversation_participants").insert({
         conversation_id: conv.id,
         user_id: user.id,
       });
       
-      // Create support ticket
-      await supabase.from("support_tickets").insert({
+      if (partError) throw partError;
+      
+      // Create support ticket linked to this conversation
+      const { error: ticketError } = await supabase.from("support_tickets").insert({
         user_id: user.id,
         conversation_id: conv.id,
       });
+      
+      if (ticketError) throw ticketError;
       
       // Send initial message
-      await supabase.from("messages").insert({
+      const { error: msgError } = await supabase.from("messages").insert({
         conversation_id: conv.id,
         sender_id: user.id,
         content: "Hi! I need help with something.",
       });
       
+      if (msgError) throw msgError;
+      
       toast({ title: "Support request created!", description: "We'll get back to you soon." });
       navigate("/messages");
     } catch (error: any) {
+      console.error("Support request error:", error);
       toast({ title: "Failed to create support request", description: error.message, variant: "destructive" });
     } finally {
       setRequestingSupport(false);
