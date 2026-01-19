@@ -21,6 +21,8 @@ import NotFound from "./pages/NotFound";
 import PointsHistory from "./pages/PointsHistory";
 import BuyPoints from "./pages/BuyPoints";
 import Messages from "./pages/Messages";
+import SupporterApplication from "./pages/SupporterApplication";
+import SupporterDashboard from "./pages/SupporterDashboard";
 
 const queryClient = new QueryClient();
 
@@ -34,9 +36,12 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/supporter-application" element={<ProtectedRoute><SupporterApplication /></ProtectedRoute>} />
+            <Route path="/supporter" element={<ProtectedRoute><SupporterDashboard /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/quests/:id" element={<ProtectedRoute><QuestDetail /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
+            <Route path="/listing/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />
             <Route path="/listings/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />
             <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
             <Route path="/my-codes" element={<ProtectedRoute><MyCodes /></ProtectedRoute>} />

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog } from "lucide-react";
+import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
@@ -18,6 +18,7 @@ const Admin = () => {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
+  const [supporterApps, setSupporterApps] = useState<any[]>([]);
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +64,7 @@ const Admin = () => {
     const initialXp: Record<string, number> = {};
     submissionsWithDetails.forEach(sub => {
       initialPoints[sub.id] = sub.quest_base_points;
-      initialXp[sub.id] = Math.round(sub.quest_base_points * 0.5); // Default XP is 50% of points
+      initialXp[sub.id] = Math.round(sub.quest_base_points * 0.5);
     });
     setPointsValues(prev => ({ ...initialPoints, ...prev }));
     setXpValues(prev => ({ ...initialXp, ...prev }));
@@ -97,20 +98,44 @@ const Admin = () => {
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
-    // Fetch details for applications - include listing type
+    // Fetch details for applications - include listing info
     const applicationsWithDetails = await Promise.all(
       (applicationsData || []).map(async (app) => {
         const [listingRes, profileRes] = await Promise.all([
-          supabase.from("listings").select("title, listing_type, description").eq("id", app.listing_id).single(),
+          supabase.from("listings").select("id, title, listing_type, description").eq("id", app.listing_id).single(),
           supabase.from("profiles").select("display_name, username").eq("user_id", app.applicant_user_id).single(),
         ]);
         return {
           ...app,
+          listing_id: listingRes.data?.id || app.listing_id,
           listing_title: listingRes.data?.title || "Unknown Listing",
           listing_type: listingRes.data?.listing_type || "help_request",
           listing_description: listingRes.data?.description || "",
           user_display_name: profileRes.data?.display_name || "Unknown User",
           user_username: profileRes.data?.username || null,
+        };
+      })
+    );
+
+    // Fetch supporter applications
+    const { data: supporterAppsData } = await supabase
+      .from("supporter_applications")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    const supporterAppsWithDetails = await Promise.all(
+      (supporterAppsData || []).map(async (app) => {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("display_name, username, avatar_url")
+          .eq("user_id", app.user_id)
+          .single();
+        return {
+          ...app,
+          user_display_name: profileData?.display_name || "Unknown User",
+          user_username: profileData?.username || null,
+          user_avatar: profileData?.avatar_url || null,
         };
       })
     );
@@ -137,7 +162,7 @@ const Admin = () => {
       })
     );
 
-    // Fetch all users for admin impersonation
+    // Fetch all users
     const { data: usersData } = await supabase
       .from("profiles")
       .select("user_id, display_name, username, avatar_url, level, swap_points, user_type")
@@ -146,6 +171,7 @@ const Admin = () => {
     setSubmissions(submissionsWithDetails);
     setListings(listingsWithDetails);
     setApplications(applicationsWithDetails);
+    setSupporterApps(supporterAppsWithDetails);
     setSupportTickets(ticketsWithDetails);
     setUsers(usersData || []);
     setLoading(false);
@@ -201,7 +227,6 @@ const Admin = () => {
     setProcessing(id);
     await supabase.from("listing_applications").update({ status: "accepted", reviewed_at: new Date().toISOString() }).eq("id", id);
     
-    // Award points if set
     const points = listingPoints[id] || 0;
     const xp = listingXp[id] || 0;
     if (points > 0 || xp > 0) {
@@ -225,6 +250,47 @@ const Admin = () => {
     toast({ title: "Application rejected" }); fetchData();
   };
 
+  const approveSupporterApp = async (app: any) => {
+    setProcessing(app.id);
+    
+    // Update application status
+    await supabase
+      .from("supporter_applications")
+      .update({ 
+        status: "approved", 
+        reviewed_at: new Date().toISOString(),
+        admin_note: adminNotes[app.id] || null
+      })
+      .eq("id", app.id);
+    
+    // Update user profile to supporter
+    await supabase
+      .from("profiles")
+      .update({ user_type: "supporter" })
+      .eq("user_id", app.user_id);
+    
+    setProcessing(null);
+    toast({ title: "Supporter application approved!" }); 
+    fetchData();
+  };
+
+  const rejectSupporterApp = async (app: any) => {
+    setProcessing(app.id);
+    
+    await supabase
+      .from("supporter_applications")
+      .update({ 
+        status: "rejected", 
+        reviewed_at: new Date().toISOString(),
+        admin_note: adminNotes[app.id] || null
+      })
+      .eq("id", app.id);
+    
+    setProcessing(null);
+    toast({ title: "Supporter application rejected" }); 
+    fetchData();
+  };
+
   if (loading) return <AppLayout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div></AppLayout>;
 
   return (
@@ -242,7 +308,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="submissions">
-          <TabsList className="grid w-full max-w-4xl grid-cols-5">
+          <TabsList className="grid w-full max-w-5xl grid-cols-6">
             <TabsTrigger value="submissions">
               Submissions ({submissions.length})
             </TabsTrigger>
@@ -251,6 +317,9 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="applications">
               Applications ({applications.length})
+            </TabsTrigger>
+            <TabsTrigger value="supporters">
+              Supporters ({supporterApps.length})
             </TabsTrigger>
             <TabsTrigger value="support">
               Support ({supportTickets.length})
@@ -287,7 +356,6 @@ const Admin = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Location */}
                     {s.location_name && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
@@ -295,31 +363,21 @@ const Admin = () => {
                       </div>
                     )}
                     
-                    {/* Before/After Images */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <p className="text-xs font-medium text-muted-foreground">BEFORE</p>
                         {s.before_image_url && (
-                          <img
-                            src={s.before_image_url}
-                            className="rounded-lg aspect-video object-cover w-full border border-border"
-                            alt="Before"
-                          />
+                          <img src={s.before_image_url} className="rounded-lg aspect-video object-cover w-full border border-border" alt="Before" />
                         )}
                       </div>
                       <div className="space-y-2">
                         <p className="text-xs font-medium text-muted-foreground">AFTER</p>
                         {s.after_image_url && (
-                          <img
-                            src={s.after_image_url}
-                            className="rounded-lg aspect-video object-cover w-full border border-border"
-                            alt="After"
-                          />
+                          <img src={s.after_image_url} className="rounded-lg aspect-video object-cover w-full border border-border" alt="After" />
                         )}
                       </div>
                     </div>
 
-                    {/* Custom Points & XP Input */}
                     <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
                       <div className="space-y-2">
                         <Label htmlFor={`points-${s.id}`} className="text-sm font-medium flex items-center gap-1">
@@ -332,29 +390,22 @@ const Admin = () => {
                           min={0}
                           value={pointsValues[s.id] || s.quest_base_points}
                           onChange={(e) => setPointsValues({ ...pointsValues, [s.id]: parseInt(e.target.value) || 0 })}
-                          className="w-full"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor={`xp-${s.id}`} className="text-sm font-medium">
-                          XP to Award
-                        </Label>
+                        <Label htmlFor={`xp-${s.id}`} className="text-sm font-medium">XP to Award</Label>
                         <Input
                           id={`xp-${s.id}`}
                           type="number"
                           min={0}
                           value={xpValues[s.id] || Math.round(s.quest_base_points * 0.5)}
                           onChange={(e) => setXpValues({ ...xpValues, [s.id]: parseInt(e.target.value) || 0 })}
-                          className="w-full"
                         />
                       </div>
                     </div>
 
-                    {/* Admin Note */}
                     <div className="space-y-2">
-                      <Label htmlFor={`note-${s.id}`} className="text-sm font-medium">
-                        Note to User (optional)
-                      </Label>
+                      <Label htmlFor={`note-${s.id}`} className="text-sm font-medium">Note to User (optional)</Label>
                       <Textarea
                         id={`note-${s.id}`}
                         placeholder="Write feedback for the user..."
@@ -364,23 +415,13 @@ const Admin = () => {
                       />
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-3 pt-2">
                       <div className="flex-1" />
-                      <Button
-                        onClick={() => approveSubmission(s.id)}
-                        disabled={processing === s.id}
-                        className="gap-1"
-                      >
+                      <Button onClick={() => approveSubmission(s.id)} disabled={processing === s.id} className="gap-1">
                         {processing === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         Approve
                       </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => rejectSubmission(s.id)}
-                        disabled={processing === s.id}
-                        className="gap-1"
-                      >
+                      <Button variant="destructive" onClick={() => rejectSubmission(s.id)} disabled={processing === s.id} className="gap-1">
                         <X className="h-4 w-4" />
                         Reject
                       </Button>
@@ -398,7 +439,6 @@ const Admin = () => {
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Image className="h-12 w-12 mx-auto mb-4 opacity-30" />
                   <p>No pending listings</p>
-                  <p className="text-sm">New community listings will appear here for review</p>
                 </CardContent>
               </Card>
             ) : (
@@ -428,31 +468,17 @@ const Admin = () => {
                     {l.photo_urls?.length > 0 && (
                       <div className="flex gap-2 overflow-x-auto">
                         {l.photo_urls.map((url: string, i: number) => (
-                          <img
-                            key={i}
-                            src={url}
-                            className="h-24 w-24 rounded-lg object-cover border border-border flex-shrink-0"
-                            alt={`Photo ${i + 1}`}
-                          />
+                          <img key={i} src={url} className="h-24 w-24 rounded-lg object-cover border border-border flex-shrink-0" alt={`Photo ${i + 1}`} />
                         ))}
                       </div>
                     )}
 
                     <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={() => approveListing(l.id)}
-                        disabled={processing === l.id}
-                        className="gap-1"
-                      >
+                      <Button onClick={() => approveListing(l.id)} disabled={processing === l.id} className="gap-1">
                         {processing === l.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         Approve
                       </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => rejectListing(l.id)}
-                        disabled={processing === l.id}
-                        className="gap-1"
-                      >
+                      <Button variant="destructive" onClick={() => rejectListing(l.id)} disabled={processing === l.id} className="gap-1">
                         <X className="h-4 w-4" />
                         Reject
                       </Button>
@@ -470,7 +496,6 @@ const Admin = () => {
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Image className="h-12 w-12 mx-auto mb-4 opacity-30" />
                   <p>No pending applications</p>
-                  <p className="text-sm">Listing applications will appear here for review</p>
                 </CardContent>
               </Card>
             ) : (
@@ -485,24 +510,16 @@ const Admin = () => {
                           {new Date(a.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => navigate(`/listing/${a.listing_id}`)}
-                      >
+                      <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/listing/${a.listing_id}`)}>
                         <ExternalLink className="h-3 w-3" />
                         View Listing
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Listing Preview */}
                     <div className="p-4 rounded-lg border border-border bg-muted/20">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {a.listing_type.replace("_", " ")}
-                        </Badge>
+                        <Badge variant="secondary" className="text-xs">{a.listing_type.replace("_", " ")}</Badge>
                         <span className="font-medium">{a.listing_title}</span>
                       </div>
                       {a.listing_description && (
@@ -517,12 +534,9 @@ const Admin = () => {
                       </div>
                     )}
 
-                    {/* Optional Reward */}
                     <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
                       <div className="space-y-2">
-                        <Label htmlFor={`listing-points-${a.id}`} className="text-sm font-medium">
-                          Points to Award (optional)
-                        </Label>
+                        <Label htmlFor={`listing-points-${a.id}`} className="text-sm font-medium">Points to Award (optional)</Label>
                         <Input
                           id={`listing-points-${a.id}`}
                           type="number"
@@ -533,9 +547,7 @@ const Admin = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor={`listing-xp-${a.id}`} className="text-sm font-medium">
-                          XP to Award (optional)
-                        </Label>
+                        <Label htmlFor={`listing-xp-${a.id}`} className="text-sm font-medium">XP to Award (optional)</Label>
                         <Input
                           id={`listing-xp-${a.id}`}
                           type="number"
@@ -548,20 +560,113 @@ const Admin = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button
-                        onClick={() => acceptApplication(a.id, a.listing_id, a.applicant_user_id)}
-                        disabled={processing === a.id}
-                        className="gap-1"
-                      >
+                      <Button onClick={() => acceptApplication(a.id, a.listing_id, a.applicant_user_id)} disabled={processing === a.id} className="gap-1">
                         {processing === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         Accept
                       </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => rejectApplication(a.id)}
-                        disabled={processing === a.id}
-                        className="gap-1"
-                      >
+                      <Button variant="destructive" onClick={() => rejectApplication(a.id)} disabled={processing === a.id} className="gap-1">
+                        <X className="h-4 w-4" />
+                        Reject
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          {/* Supporter Applications Tab */}
+          <TabsContent value="supporters" className="mt-6 space-y-4">
+            {supporterApps.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Building2 className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p>No pending supporter applications</p>
+                  <p className="text-sm">Business applications will appear here for review</p>
+                </CardContent>
+              </Card>
+            ) : (
+              supporterApps.map((app) => (
+                <Card key={app.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          {app.user_avatar ? (
+                            <img src={app.user_avatar} className="h-12 w-12 rounded-full object-cover" />
+                          ) : (
+                            <Building2 className="h-6 w-6" />
+                          )}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{app.company_name}</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            by {app.user_display_name}
+                            {app.user_username && <span> (@{app.user_username})</span>}
+                            {" • "}{new Date(app.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{app.industry}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Company Details */}
+                    <div className="grid gap-3 sm:grid-cols-2 p-4 rounded-lg bg-muted/20 border border-border">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Team Size</p>
+                        <p className="font-medium">{app.company_size}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Location</p>
+                        <p className="font-medium">{app.location}</p>
+                      </div>
+                      {app.yearly_revenue && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Yearly Revenue</p>
+                          <p className="font-medium">{app.yearly_revenue}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* What They Offer */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">What they will offer:</p>
+                      <div className="p-3 rounded-lg bg-swap-green/10 border border-swap-green/20">
+                        <p className="text-sm">{app.what_they_offer}</p>
+                      </div>
+                    </div>
+
+                    {/* About Them */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">About them:</p>
+                      <p className="text-sm text-muted-foreground">{app.about_them}</p>
+                    </div>
+
+                    {/* Why Supporter */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Why they want to be a supporter:</p>
+                      <p className="text-sm text-muted-foreground">{app.why_supporter}</p>
+                    </div>
+
+                    {/* Admin Note */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`supporter-note-${app.id}`} className="text-sm font-medium">Admin Note (optional)</Label>
+                      <Textarea
+                        id={`supporter-note-${app.id}`}
+                        placeholder="Add notes about this application..."
+                        value={adminNotes[app.id] || ""}
+                        onChange={(e) => setAdminNotes({ ...adminNotes, [app.id]: e.target.value })}
+                        className="h-20"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button onClick={() => approveSupporterApp(app)} disabled={processing === app.id} className="gap-1">
+                        {processing === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                        Approve as Supporter
+                      </Button>
+                      <Button variant="destructive" onClick={() => rejectSupporterApp(app)} disabled={processing === app.id} className="gap-1">
                         <X className="h-4 w-4" />
                         Reject
                       </Button>
@@ -579,7 +684,6 @@ const Admin = () => {
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
                   <p>No open support tickets</p>
-                  <p className="text-sm">User support requests will appear here</p>
                 </CardContent>
               </Card>
             ) : (
@@ -594,27 +698,18 @@ const Admin = () => {
                           {new Date(ticket.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <Badge variant={ticket.status === "open" ? "default" : "secondary"}>
-                        {ticket.status}
-                      </Badge>
+                      <Badge variant={ticket.status === "open" ? "default" : "secondary"}>{ticket.status}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        className="gap-1"
-                        onClick={() => navigate("/messages")}
-                      >
+                      <Button variant="outline" className="gap-1" onClick={() => navigate("/messages")}>
                         <MessageSquare className="h-4 w-4" />
                         Open Chat
                       </Button>
                       <Button
                         onClick={async () => {
-                          await supabase
-                            .from("support_tickets")
-                            .update({ status: "resolved", resolved_at: new Date().toISOString() })
-                            .eq("id", ticket.id);
+                          await supabase.from("support_tickets").update({ status: "resolved", resolved_at: new Date().toISOString() }).eq("id", ticket.id);
                           toast({ title: "Ticket resolved" });
                           fetchData();
                         }}
@@ -642,10 +737,7 @@ const Admin = () => {
               <CardContent>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {users.map((u) => (
-                    <div
-                      key={u.user_id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors"
-                    >
+                    <div key={u.user_id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                           {u.avatar_url ? (
@@ -660,16 +752,12 @@ const Admin = () => {
                             {u.username && <span>@{u.username} • </span>}
                             Level {u.level} • {u.swap_points} pts
                             {u.user_type && (
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {u.user_type}
-                              </Badge>
+                              <Badge variant="outline" className="ml-2 text-xs">{u.user_type}</Badge>
                             )}
                           </p>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        ID: {u.user_id.slice(0, 8)}...
-                      </p>
+                      <p className="text-xs text-muted-foreground">ID: {u.user_id.slice(0, 8)}...</p>
                     </div>
                   ))}
                 </div>
