@@ -14,6 +14,79 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_participants: {
+        Row: {
+          conversation_id: string
+          id: string
+          is_admin: boolean
+          joined_at: string
+          last_read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          is_admin?: boolean
+          joined_at?: string
+          last_read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          is_admin?: boolean
+          joined_at?: string
+          last_read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          conversation_type: string
+          created_at: string
+          created_by: string
+          id: string
+          listing_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          conversation_type: string
+          created_at?: string
+          created_by: string
+          id?: string
+          listing_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conversation_type?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          listing_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -52,6 +125,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      level_tiers: {
+        Row: {
+          created_at: string
+          daily_listing_limit: number
+          free_code_monthly: boolean
+          has_themes: boolean
+          id: string
+          max_level: number
+          min_level: number
+          point_multiplier: number
+          streak_bonus_eligible: boolean
+          tier_color: string
+          tier_name: string
+        }
+        Insert: {
+          created_at?: string
+          daily_listing_limit?: number
+          free_code_monthly?: boolean
+          has_themes?: boolean
+          id?: string
+          max_level: number
+          min_level: number
+          point_multiplier?: number
+          streak_bonus_eligible?: boolean
+          tier_color?: string
+          tier_name: string
+        }
+        Update: {
+          created_at?: string
+          daily_listing_limit?: number
+          free_code_monthly?: boolean
+          has_themes?: boolean
+          id?: string
+          max_level?: number
+          min_level?: number
+          point_multiplier?: number
+          streak_bonus_eligible?: boolean
+          tier_color?: string
+          tier_name?: string
+        }
+        Relationships: []
       }
       listing_applications: {
         Row: {
@@ -142,6 +257,113 @@ export type Database = {
           reviewed_at?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
           title?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          is_deleted: boolean
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          is_deleted?: boolean
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          is_deleted?: boolean
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_purchases: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          package_name: string
+          points_amount: number
+          price_cents: number
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          package_name: string
+          points_amount: number
+          price_cents: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          package_name?: string
+          points_amount?: number
+          price_cents?: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      points_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          related_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          related_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          related_id?: string | null
+          transaction_type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -332,6 +554,7 @@ export type Database = {
       }
       submissions: {
         Row: {
+          admin_note: string | null
           after_image_url: string
           before_image_url: string
           created_at: string
@@ -347,6 +570,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_note?: string | null
           after_image_url: string
           before_image_url: string
           created_at?: string
@@ -362,6 +586,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_note?: string | null
           after_image_url?: string
           before_image_url?: string
           created_at?: string
@@ -433,8 +658,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_listing_points: {
+        Args: {
+          p_admin_note?: string
+          p_listing_id: string
+          p_points_amount: number
+          p_user_id: string
+          p_xp_amount: number
+        }
+        Returns: undefined
+      }
       award_submission_points: {
         Args: { multiplier?: number; submission_id: string }
+        Returns: undefined
+      }
+      award_submission_points_v2: {
+        Args: {
+          p_admin_note?: string
+          p_points_amount: number
+          p_submission_id: string
+          p_xp_amount: number
+        }
         Returns: undefined
       }
       award_xp: {

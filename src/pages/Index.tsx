@@ -5,14 +5,37 @@ import { QuestCard } from "@/components/quests/QuestCard";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Loader2, MapPin, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Loader2, Sparkles, X } from "lucide-react";
+import { LocationFilter } from "@/components/filters/LocationFilter";
+import { TypeFilter } from "@/components/filters/TypeFilter";
+
+// Haversine formula to calculate distance between two coordinates
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
 const Index = () => {
   const [quests, setQuests] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("quests");
+  const [locationFilter, setLocationFilter] = useState<{
+    lat: number | null;
+    lng: number | null;
+    radiusKm: number;
+    locationName: string;
+  } | null>(null);
+  const [questTypes, setQuestTypes] = useState<string[]>([]);
+  const [listingTypes, setListingTypes] = useState<string[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -29,17 +52,42 @@ const Index = () => {
     setLoading(false);
   };
 
-  const filteredQuests = quests.filter(q => 
-    q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    q.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    q.location_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredQuests = quests.filter(q => {
+    // Text search
+    const matchesSearch = !searchQuery || 
+      q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      q.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      q.location_name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Type filter
+    const matchesType = questTypes.length === 0 || questTypes.includes(q.quest_type);
+    
+    // Location filter
+    let matchesLocation = true;
+    if (locationFilter?.lat && locationFilter?.lng && q.lat && q.lng) {
+      const distance = calculateDistance(locationFilter.lat, locationFilter.lng, q.lat, q.lng);
+      matchesLocation = distance <= locationFilter.radiusKm;
+    }
+    
+    return matchesSearch && matchesType && matchesLocation;
+  });
 
-  const filteredListings = listings.filter(l =>
-    l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    l.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    l.location_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredListings = listings.filter(l => {
+    const matchesSearch = !searchQuery ||
+      l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.location_name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesType = listingTypes.length === 0 || listingTypes.includes(l.listing_type);
+    
+    let matchesLocation = true;
+    if (locationFilter?.lat && locationFilter?.lng && l.lat && l.lng) {
+      const distance = calculateDistance(locationFilter.lat, locationFilter.lng, l.lat, l.lng);
+      matchesLocation = distance <= locationFilter.radiusKm;
+    }
+    
+    return matchesSearch && matchesType && matchesLocation;
+  });
 
   return (
     <AppLayout>
@@ -60,14 +108,44 @@ const Index = () => {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" size="icon" title="Distance filter (coming soon)">
-              <MapPin className="h-4 w-4" />
-            </Button>
+            <LocationFilter
+              currentFilter={locationFilter}
+              onFilterChange={setLocationFilter}
+            />
+            <TypeFilter
+              questTypes={questTypes}
+              listingTypes={listingTypes}
+              onQuestTypesChange={setQuestTypes}
+              onListingTypesChange={setListingTypes}
+              mode={activeTab as "quests" | "listings"}
+            />
           </div>
         </div>
 
+        {/* Active Filters */}
+        {(locationFilter || questTypes.length > 0 || listingTypes.length > 0) && (
+          <div className="flex flex-wrap gap-2">
+            {locationFilter && (
+              <Badge variant="secondary" className="gap-1">
+                📍 {locationFilter.locationName} ({locationFilter.radiusKm}km)
+                <button onClick={() => setLocationFilter(null)} className="ml-1 hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {questTypes.map(t => (
+              <Badge key={t} variant="secondary" className="gap-1">
+                {t.replace("_", " ")}
+                <button onClick={() => setQuestTypes(questTypes.filter(x => x !== t))} className="ml-1 hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
         {/* Tabs */}
-        <Tabs defaultValue="quests" className="w-full">
+        <Tabs defaultValue="quests" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="quests" className="gap-2">
               <Sparkles className="h-4 w-4" />

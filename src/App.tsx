@@ -17,6 +17,9 @@ import Saved from "./pages/Saved";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import PointsHistory from "./pages/PointsHistory";
+import BuyPoints from "./pages/BuyPoints";
+import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +40,9 @@ const App = () => (
             <Route path="/my-codes" element={<ProtectedRoute><MyCodes /></ProtectedRoute>} />
             <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/points-history" element={<ProtectedRoute><PointsHistory /></ProtectedRoute>} />
+            <Route path="/buy-points" element={<ProtectedRoute><BuyPoints /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
