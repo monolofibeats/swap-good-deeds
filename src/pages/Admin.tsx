@@ -4,9 +4,11 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Check, X, RefreshCw, MapPin, Image } from "lucide-react";
+import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
@@ -16,7 +18,15 @@ const Admin = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
-  const [multipliers, setMultipliers] = useState<Record<string, string>>({});
+  
+  // Custom points/XP values per submission
+  const [pointsValues, setPointsValues] = useState<Record<string, number>>({});
+  const [xpValues, setXpValues] = useState<Record<string, number>>({});
+  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
+  
+  // Listing reward values
+  const [listingPoints, setListingPoints] = useState<Record<string, number>>({});
+  const [listingXp, setListingXp] = useState<Record<string, number>>({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -43,6 +53,16 @@ const Admin = () => {
         };
       })
     );
+
+    // Initialize default values for points/XP
+    const initialPoints: Record<string, number> = {};
+    const initialXp: Record<string, number> = {};
+    submissionsWithDetails.forEach(sub => {
+      initialPoints[sub.id] = sub.quest_base_points;
+      initialXp[sub.id] = Math.round(sub.quest_base_points * 0.5); // Default XP is 50% of points
+    });
+    setPointsValues(prev => ({ ...initialPoints, ...prev }));
+    setXpValues(prev => ({ ...initialXp, ...prev }));
 
     // Fetch listings
     const { data: listingsData } = await supabase
@@ -98,16 +118,30 @@ const Admin = () => {
 
   const approveSubmission = async (id: string) => {
     setProcessing(id);
-    const mult = parseFloat(multipliers[id] || "1");
-    const { error } = await supabase.rpc("award_submission_points", { submission_id: id, multiplier: mult });
+    const points = pointsValues[id] || 100;
+    const xp = xpValues[id] || 50;
+    const note = adminNotes[id] || null;
+    
+    const { error } = await supabase.rpc("award_submission_points_v2", { 
+      p_submission_id: id, 
+      p_points_amount: points,
+      p_xp_amount: xp,
+      p_admin_note: note
+    });
+    
     setProcessing(null);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Approved! Points and XP awarded." }); fetchData(); }
+    else { toast({ title: `Approved! Awarded ${points} points and ${xp} XP.` }); fetchData(); }
   };
 
   const rejectSubmission = async (id: string) => {
     setProcessing(id);
-    await supabase.from("submissions").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("id", id);
+    const note = adminNotes[id] || null;
+    await supabase.from("submissions").update({ 
+      status: "rejected", 
+      reviewed_at: new Date().toISOString(),
+      admin_note: note
+    }).eq("id", id);
     setProcessing(null);
     toast({ title: "Submission rejected" }); fetchData();
   };
@@ -126,11 +160,25 @@ const Admin = () => {
     toast({ title: "Listing rejected" }); fetchData();
   };
 
-  const acceptApplication = async (id: string) => {
+  const acceptApplication = async (id: string, listingId: string, userId: string) => {
     setProcessing(id);
     await supabase.from("listing_applications").update({ status: "accepted", reviewed_at: new Date().toISOString() }).eq("id", id);
+    
+    // Award points if set
+    const points = listingPoints[id] || 0;
+    const xp = listingXp[id] || 0;
+    if (points > 0 || xp > 0) {
+      await supabase.rpc("award_listing_points", {
+        p_listing_id: listingId,
+        p_user_id: userId,
+        p_points_amount: points,
+        p_xp_amount: xp
+      });
+    }
+    
     setProcessing(null);
-    toast({ title: "Application accepted!" }); fetchData();
+    toast({ title: points > 0 ? `Application accepted! Awarded ${points} points.` : "Application accepted!" }); 
+    fetchData();
   };
 
   const rejectApplication = async (id: string) => {
@@ -228,26 +276,53 @@ const Admin = () => {
                       </div>
                     </div>
 
+                    {/* Custom Points & XP Input */}
+                    <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
+                      <div className="space-y-2">
+                        <Label htmlFor={`points-${s.id}`} className="text-sm font-medium flex items-center gap-1">
+                          <Sparkles className="h-3 w-3 text-primary" />
+                          Points to Award
+                        </Label>
+                        <Input
+                          id={`points-${s.id}`}
+                          type="number"
+                          min={0}
+                          value={pointsValues[s.id] || s.quest_base_points}
+                          onChange={(e) => setPointsValues({ ...pointsValues, [s.id]: parseInt(e.target.value) || 0 })}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`xp-${s.id}`} className="text-sm font-medium">
+                          XP to Award
+                        </Label>
+                        <Input
+                          id={`xp-${s.id}`}
+                          type="number"
+                          min={0}
+                          value={xpValues[s.id] || Math.round(s.quest_base_points * 0.5)}
+                          onChange={(e) => setXpValues({ ...xpValues, [s.id]: parseInt(e.target.value) || 0 })}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Admin Note */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`note-${s.id}`} className="text-sm font-medium">
+                        Note to User (optional)
+                      </Label>
+                      <Textarea
+                        id={`note-${s.id}`}
+                        placeholder="Write feedback for the user..."
+                        value={adminNotes[s.id] || ""}
+                        onChange={(e) => setAdminNotes({ ...adminNotes, [s.id]: e.target.value })}
+                        className="h-20"
+                      />
+                    </div>
+
                     {/* Actions */}
                     <div className="flex items-center gap-3 pt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Multiplier:</span>
-                        <Select
-                          value={multipliers[s.id] || "1"}
-                          onValueChange={(v) => setMultipliers({ ...multipliers, [s.id]: v })}
-                        >
-                          <SelectTrigger className="w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0.5">0.5x</SelectItem>
-                            <SelectItem value="1">1.0x</SelectItem>
-                            <SelectItem value="1.5">1.5x</SelectItem>
-                            <SelectItem value="2">2.0x</SelectItem>
-                            <SelectItem value="3">3.0x</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                       <div className="flex-1" />
                       <Button
                         onClick={() => approveSubmission(s.id)}
@@ -371,9 +446,39 @@ const Admin = () => {
                       </div>
                     )}
 
+                    {/* Optional Reward */}
+                    <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
+                      <div className="space-y-2">
+                        <Label htmlFor={`listing-points-${a.id}`} className="text-sm font-medium">
+                          Points to Award (optional)
+                        </Label>
+                        <Input
+                          id={`listing-points-${a.id}`}
+                          type="number"
+                          min={0}
+                          value={listingPoints[a.id] || 0}
+                          onChange={(e) => setListingPoints({ ...listingPoints, [a.id]: parseInt(e.target.value) || 0 })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`listing-xp-${a.id}`} className="text-sm font-medium">
+                          XP to Award (optional)
+                        </Label>
+                        <Input
+                          id={`listing-xp-${a.id}`}
+                          type="number"
+                          min={0}
+                          value={listingXp[a.id] || 0}
+                          onChange={(e) => setListingXp({ ...listingXp, [a.id]: parseInt(e.target.value) || 0 })}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button
-                        onClick={() => acceptApplication(a.id)}
+                        onClick={() => acceptApplication(a.id, a.listing_id, a.applicant_user_id)}
                         disabled={processing === a.id}
                         className="gap-1"
                       >

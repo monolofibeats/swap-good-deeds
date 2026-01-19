@@ -85,19 +85,14 @@ const BuyPoints = () => {
     try {
       // Call edge function to create Stripe checkout session
       const { data, error } = await supabase.functions.invoke("create-points-checkout", {
-        body: {
-          packageId: pkg.id,
-          packageName: pkg.name,
-          pointsAmount: pkg.points + (pkg.bonus || 0),
-          priceCents: pkg.price,
-        },
+        body: { packageId: pkg.id },
       });
 
       if (error) throw error;
 
       // Redirect to Stripe checkout
       if (data?.url) {
-        window.location.href = data.url;
+        window.open(data.url, "_blank");
       }
     } catch (error: any) {
       toast({

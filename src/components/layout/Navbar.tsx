@@ -18,6 +18,7 @@ import {
   Shield, 
   LogOut, 
   User,
+  MessageSquare,
   Menu,
   Home,
   Settings,
@@ -34,6 +35,7 @@ const navItems = [
   { label: "Feed", path: "/", icon: Home },
   { label: "Create Listing", path: "/create", icon: Plus },
   { label: "Saved", path: "/saved", icon: Star },
+  { label: "Messages", path: "/messages", icon: MessageSquare },
   { label: "Rewards", path: "/rewards", icon: Gift },
   { label: "My Codes", path: "/my-codes", icon: Ticket },
 ];
