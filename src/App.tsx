@@ -13,6 +13,8 @@ import CreateListing from "./pages/CreateListing";
 import ListingDetail from "./pages/ListingDetail";
 import Rewards from "./pages/Rewards";
 import MyCodes from "./pages/MyCodes";
+import Saved from "./pages/Saved";
+import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/listings/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />
             <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
             <Route path="/my-codes" element={<ProtectedRoute><MyCodes /></ProtectedRoute>} />
+            <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

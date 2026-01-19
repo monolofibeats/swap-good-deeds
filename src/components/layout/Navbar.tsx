@@ -1,6 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,13 +19,21 @@ import {
   LogOut, 
   User,
   Menu,
-  Home
+  Home,
+  Settings,
+  Star,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Level calculation helpers
+const xpForLevel = (level: number) => Math.pow(level - 1, 2) * 25;
+const xpForNextLevel = (level: number) => Math.pow(level, 2) * 25;
 
 const navItems = [
   { label: "Feed", path: "/", icon: Home },
   { label: "Create Listing", path: "/create", icon: Plus },
+  { label: "Saved", path: "/saved", icon: Star },
   { label: "Rewards", path: "/rewards", icon: Gift },
   { label: "My Codes", path: "/my-codes", icon: Ticket },
 ];
@@ -37,6 +47,14 @@ export const Navbar = () => {
     await signOut();
     navigate("/auth");
   };
+
+  // Get XP progress
+  const currentXp = (profile as any)?.xp || 0;
+  const currentLevel = (profile as any)?.level || 1;
+  const avatarUrl = (profile as any)?.avatar_url;
+  const xpInCurrentLevel = currentXp - xpForLevel(currentLevel);
+  const xpNeededForNext = xpForNextLevel(currentLevel) - xpForLevel(currentLevel);
+  const levelProgress = xpNeededForNext > 0 ? (xpInCurrentLevel / xpNeededForNext) * 100 : 100;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -101,18 +119,45 @@ export const Navbar = () => {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <User className="h-4 w-4" />
+              <Button variant="outline" className="gap-2 pl-2">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={avatarUrl} />
+                  <AvatarFallback className="text-xs bg-primary/10">
+                    {profile?.display_name?.[0]?.toUpperCase() || <User className="h-3 w-3" />}
+                  </AvatarFallback>
+                </Avatar>
                 <span className="hidden sm:inline max-w-[120px] truncate">
                   {profile?.display_name || user?.email}
                 </span>
                 <Menu className="h-4 w-4 sm:hidden" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-popover">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{profile?.display_name}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+            <DropdownMenuContent align="end" className="w-64 bg-popover">
+              {/* User Info with Level */}
+              <div className="px-3 py-3">
+                <div className="flex items-center gap-3 mb-2">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={avatarUrl} />
+                    <AvatarFallback className="bg-primary/10">
+                      {profile?.display_name?.[0]?.toUpperCase() || <User className="h-5 w-5" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{profile?.display_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                </div>
+                {/* Level progress */}
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gradient-to-br from-swap-gold to-swap-earth text-xs font-bold text-background">
+                    {currentLevel}
+                  </div>
+                  <div className="flex-1">
+                    <Progress value={levelProgress} className="h-1.5" />
+                  </div>
+                  <Trophy className="h-4 w-4 text-swap-gold" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Level {currentLevel} · {currentXp} XP</p>
               </div>
               <DropdownMenuSeparator />
               
@@ -140,12 +185,21 @@ export const Navbar = () => {
                 <DropdownMenuSeparator />
               </div>
               
-              <DropdownMenuItem asChild>
-                <div className="flex items-center gap-2 sm:hidden">
+              <DropdownMenuItem asChild className="sm:hidden">
+                <div className="flex items-center gap-2">
                   <Leaf className="h-4 w-4 text-primary" />
                   <span>{profile?.swap_points.toLocaleString()} SWAP Points</span>
                 </div>
               </DropdownMenuItem>
+              
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
               
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="h-4 w-4 mr-2" />

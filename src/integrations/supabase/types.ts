@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string | null
+          quest_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          quest_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          quest_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_applications: {
         Row: {
           applicant_user_id: string
@@ -108,28 +147,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           display_name: string
           id: string
+          level: number
+          referral_code: string | null
           swap_points: number
           updated_at: string
           user_id: string
+          xp: number
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           display_name?: string
           id?: string
+          level?: number
+          referral_code?: string | null
           swap_points?: number
           updated_at?: string
           user_id: string
+          xp?: number
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           display_name?: string
           id?: string
+          level?: number
+          referral_code?: string | null
           swap_points?: number
           updated_at?: string
           user_id?: string
+          xp?: number
         }
         Relationships: []
       }
@@ -218,6 +269,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          points_awarded: boolean
+          referral_code: string
+          referred_user_id: string
+          referrer_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_awarded?: boolean
+          referral_code: string
+          referred_user_id: string
+          referrer_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_awarded?: boolean
+          referral_code?: string
+          referred_user_id?: string
+          referrer_user_id?: string
+        }
+        Relationships: []
       }
       rewards: {
         Row: {
@@ -308,6 +386,27 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          badge_type: Database["public"]["Enums"]["badge_type"]
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_type: Database["public"]["Enums"]["badge_type"]
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_type?: Database["public"]["Enums"]["badge_type"]
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -338,6 +437,10 @@ export type Database = {
         Args: { multiplier?: number; submission_id: string }
         Returns: undefined
       }
+      award_xp: {
+        Args: { p_user_id: string; p_xp: number }
+        Returns: undefined
+      }
       generate_redemption_code: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -354,6 +457,10 @@ export type Database = {
         Args: { quest_id: string }
         Returns: undefined
       }
+      process_referral: {
+        Args: { p_new_user_id: string; p_referral_code: string }
+        Returns: undefined
+      }
       redeem_reward: {
         Args: { p_reward_id: string; p_user_id: string }
         Returns: string
@@ -362,6 +469,17 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       application_status: "pending" | "accepted" | "rejected"
+      badge_type:
+        | "first_quest"
+        | "cleanup_hero"
+        | "good_samaritan"
+        | "community_star"
+        | "eco_warrior"
+        | "helper_badge"
+        | "referral_champion"
+        | "level_5"
+        | "level_10"
+        | "level_25"
       listing_status: "pending" | "approved" | "rejected"
       listing_type: "help_request" | "micro_job" | "good_deed_request"
       quest_type: "cleanup" | "good_deed"
@@ -497,6 +615,18 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       application_status: ["pending", "accepted", "rejected"],
+      badge_type: [
+        "first_quest",
+        "cleanup_hero",
+        "good_samaritan",
+        "community_star",
+        "eco_warrior",
+        "helper_badge",
+        "referral_champion",
+        "level_5",
+        "level_10",
+        "level_25",
+      ],
       listing_status: ["pending", "approved", "rejected"],
       listing_type: ["help_request", "micro_job", "good_deed_request"],
       quest_type: ["cleanup", "good_deed"],
