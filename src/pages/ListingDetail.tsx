@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, MapPin, Eye, HelpCircle, Briefcase, Heart, Check, HandHeart } from "lucide-react";
+import { Loader2, MapPin, Eye, HelpCircle, Briefcase, Heart, Check, HandHeart, Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateEU } from "@/lib/dateUtils";
 
@@ -27,6 +27,7 @@ const typeConfig: any = {
   help_request: { label: "Help Request", icon: HelpCircle, color: "bg-swap-gold/20 text-swap-gold" },
   micro_job: { label: "Micro Job", icon: Briefcase, color: "bg-swap-earth/20 text-swap-earth" },
   good_deed_request: { label: "Good Deed", icon: Heart, color: "bg-swap-sky/20 text-swap-sky" },
+  service_offer: { label: "Service Offer", icon: Wrench, color: "bg-purple-500/20 text-purple-500" },
 };
 
 const ListingDetail = () => {

@@ -52,6 +52,17 @@ const Index = () => {
     setLoading(false);
   };
 
+  // Sort promoted items first, then by date
+  const sortByPromotion = (a: any, b: any) => {
+    // Promoted items first (active promotions only)
+    const aPromoted = a.is_promoted && a.promotion_expires_at && new Date(a.promotion_expires_at) > new Date();
+    const bPromoted = b.is_promoted && b.promotion_expires_at && new Date(b.promotion_expires_at) > new Date();
+    if (aPromoted && !bPromoted) return -1;
+    if (!aPromoted && bPromoted) return 1;
+    // Then by date
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  };
+
   const filteredQuests = quests.filter(q => {
     // Text search
     const matchesSearch = !searchQuery || 
@@ -70,7 +81,7 @@ const Index = () => {
     }
     
     return matchesSearch && matchesType && matchesLocation;
-  });
+  }).sort(sortByPromotion);
 
   const filteredListings = listings.filter(l => {
     const matchesSearch = !searchQuery ||
@@ -87,7 +98,7 @@ const Index = () => {
     }
     
     return matchesSearch && matchesType && matchesLocation;
-  });
+  }).sort(sortByPromotion);
 
   return (
     <AppLayout>
@@ -181,6 +192,7 @@ const Index = () => {
                         lng={quest.lng}
                         impressions={quest.impressions}
                         createdAt={quest.created_at}
+                        isPromoted={quest.is_promoted && quest.promotion_expires_at && new Date(quest.promotion_expires_at) > new Date()}
                       />
                     ))}
                   </div>
@@ -206,6 +218,7 @@ const Index = () => {
                         photoUrls={listing.photo_urls || []}
                         impressions={listing.impressions}
                         createdAt={listing.created_at}
+                        isPromoted={listing.is_promoted && listing.promotion_expires_at && new Date(listing.promotion_expires_at) > new Date()}
                       />
                     ))}
                   </div>

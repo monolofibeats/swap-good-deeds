@@ -28,6 +28,7 @@ const LISTING_TYPE_LABELS: Record<string, string> = {
   help_request: "Help Request",
   micro_job: "Micro Job",
   good_deed_request: "Good Deed Request",
+  service_offer: "Service Offer",
 };
 
 export const TypeFilter: React.FC<TypeFilterProps> = ({
@@ -39,7 +40,7 @@ export const TypeFilter: React.FC<TypeFilterProps> = ({
 }) => {
   const hasActiveFilter = mode === "quests" 
     ? questTypes.length > 0 && questTypes.length < 2
-    : listingTypes.length > 0 && listingTypes.length < 3;
+    : listingTypes.length > 0 && listingTypes.length < 4;
 
   const toggleQuestType = (type: string) => {
     if (questTypes.includes(type)) {

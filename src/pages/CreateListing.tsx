@@ -81,7 +81,7 @@ const CreateListing = () => {
         <Card>
           <CardHeader>
             <CardTitle>Create a Listing</CardTitle>
-            <CardDescription>Request help from your community or offer a good deed opportunity</CardDescription>
+            <CardDescription>Request help, offer your skills, or create a good deed opportunity</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -93,8 +93,12 @@ const CreateListing = () => {
                     <SelectItem value="help_request">Help Request</SelectItem>
                     <SelectItem value="micro_job">Micro Job</SelectItem>
                     <SelectItem value="good_deed_request">Good Deed Request</SelectItem>
+                    <SelectItem value="service_offer">Service Offer (Skill)</SelectItem>
                   </SelectContent>
                 </Select>
+                {listingType === "service_offer" && (
+                  <p className="text-xs text-muted-foreground">Offer your skills to others (e.g., carpentry, tutoring, handyman)</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Title *</Label>

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Leaf, Trash2, Heart } from "lucide-react";
+import { Eye, Leaf, Trash2, Heart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LocationMap } from "@/components/shared/LocationMap";
 import { FavoriteButton } from "@/components/shared/FavoriteButton";
@@ -20,6 +20,7 @@ interface QuestCardProps {
   lng?: number | null;
   impressions: number;
   createdAt: string;
+  isPromoted?: boolean;
 }
 
 export const QuestCard: React.FC<QuestCardProps> = ({
@@ -34,11 +35,23 @@ export const QuestCard: React.FC<QuestCardProps> = ({
   lng,
   impressions,
   createdAt,
+  isPromoted,
 }) => {
   const isCleanup = questType === "cleanup";
   
   return (
-    <Card className="card-hover group overflow-hidden border-border/50 bg-card/50 backdrop-blur relative">
+    <Card className={cn(
+      "card-hover group overflow-hidden border-border/50 bg-card/50 backdrop-blur relative",
+      isPromoted && "ring-2 ring-swap-gold/50 border-swap-gold/30"
+    )}>
+      {isPromoted && (
+        <div className="absolute top-2 right-2 z-10">
+          <Badge className="bg-swap-gold text-black gap-1 text-xs">
+            <Star className="h-3 w-3 fill-current" />
+            Promoted
+          </Badge>
+        </div>
+      )}
       <Link to={`/quests/${id}`} className="block">
         <CardContent className="p-5">
           {/* Header */}
