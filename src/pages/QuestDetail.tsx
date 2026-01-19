@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Eye, Leaf, Trash2, Heart, Check, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateEU } from "@/lib/dateUtils";
 
 interface CreatorInfo {
   user_id: string;
@@ -122,7 +123,7 @@ const QuestDetail = () => {
                 />
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1"><Eye className="h-4 w-4" /> {quest.impressions} views</span>
-                  <span>{new Date(quest.created_at).toLocaleDateString()}</span>
+                  <span>{formatDateEU(quest.created_at)}</span>
                 </div>
               </CardContent>
             </Card>

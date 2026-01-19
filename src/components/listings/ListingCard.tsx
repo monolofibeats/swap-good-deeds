@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { LocationMap } from "@/components/shared/LocationMap";
 import { FavoriteButton } from "@/components/shared/FavoriteButton";
 import { ShareButton } from "@/components/shared/ShareButton";
+import { formatDateShortEU } from "@/lib/dateUtils";
 
 interface ListingCardProps {
   id: string;
@@ -133,10 +134,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             <FavoriteButton listingId={id} size="sm" variant="ghost" />
             <ShareButton title={title} description={description} url={`${window.location.origin}/listings/${id}`} />
             <span className="ml-2">
-              {new Date(createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}
+              {formatDateShortEU(createdAt)}
             </span>
           </div>
         </div>

@@ -19,6 +19,7 @@ import {
   Star,
   Zap
 } from "lucide-react";
+import { formatDateEU } from "@/lib/dateUtils";
 
 const TRANSACTION_ICONS: Record<string, React.ReactNode> = {
   quest_reward: <Sparkles className="h-4 w-4 text-swap-gold" />,
@@ -168,7 +169,7 @@ const PointsHistory = () => {
                           <p className="text-sm text-muted-foreground truncate">{tx.description}</p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          {new Date(tx.created_at).toLocaleDateString()} at{" "}
+                          {formatDateEU(tx.created_at)} at{" "}
                           {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>

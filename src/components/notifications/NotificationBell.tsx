@@ -11,6 +11,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bell, MessageSquare, Gift, MapPin, Search, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDateEU } from "@/lib/dateUtils";
 
 const typeIcons: Record<string, React.ReactNode> = {
   message: <MessageSquare className="h-4 w-4" />,
@@ -108,7 +109,7 @@ export const NotificationBell = () => {
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(notification.created_at).toLocaleDateString()}
+                      {formatDateEU(notification.created_at)}
                     </p>
                   </div>
                   {!notification.is_read && (
