@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Camera, User, Trophy, Star, Copy, Check, Share2, Moon, Sun, Heart, Sparkles, MessageSquare, HelpCircle } from "lucide-react";
+import { Loader2, Camera, User, Trophy, Star, Copy, Check, Share2, Moon, Sun, Heart, Sparkles, MessageSquare, HelpCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Level calculation: XP needed = level^2 * 25
@@ -33,12 +33,34 @@ const Settings = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [togglingRole, setTogglingRole] = useState(false);
   const [requestingSupport, setRequestingSupport] = useState(false);
+  const [supporterAppStatus, setSupporterAppStatus] = useState<string | null>(null);
+  const [loadingAppStatus, setLoadingAppStatus] = useState(true);
 
   // Check current theme on mount
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
     setIsDarkMode(isDark);
   }, []);
+
+  // Check supporter application status
+  useEffect(() => {
+    const checkSupporterApp = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("supporter_applications")
+        .select("status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      setSupporterAppStatus(data?.status || null);
+      setLoadingAppStatus(false);
+    };
+    
+    checkSupporterApp();
+  }, [user]);
 
   const currentXp = (profile as any)?.xp || 0;
   const currentLevel = (profile as any)?.level || calculateLevel(currentXp);
@@ -54,13 +76,13 @@ const Settings = () => {
   const isSupporter = currentUserType === "supporter";
   const isBoth = currentUserType === null; // We'll use null to represent "both"
 
-  const toggleUserType = async (type: "helper" | "supporter" | null) => {
+  const setAsChangemaker = async () => {
     if (!user) return;
     setTogglingRole(true);
     
     const { error } = await supabase
       .from("profiles")
-      .update({ user_type: type })
+      .update({ user_type: "helper" })
       .eq("user_id", user.id);
     
     setTogglingRole(false);
@@ -68,7 +90,7 @@ const Settings = () => {
       toast({ title: "Failed to update", description: error.message, variant: "destructive" });
     } else {
       await refreshProfile();
-      toast({ title: "Role updated!" });
+      toast({ title: "Role updated to Changemaker!" });
     }
   };
 
@@ -414,11 +436,12 @@ const Settings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3">
+              {/* Changemaker Option - Always available */}
               <div
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                   isChangemaker ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                 }`}
-                onClick={() => !togglingRole && toggleUserType("helper")}
+                onClick={() => !togglingRole && setAsChangemaker()}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -426,7 +449,7 @@ const Settings = () => {
                       <Heart className="h-5 w-5 text-swap-green" />
                     </div>
                     <div>
-                      <p className="font-medium">Changemaker Only</p>
+                      <p className="font-medium">Changemaker</p>
                       <p className="text-sm text-muted-foreground">Complete quests and help with listings</p>
                     </div>
                   </div>
@@ -434,44 +457,64 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  isSupporter ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                }`}
-                onClick={() => !togglingRole && toggleUserType("supporter")}
-              >
+              {/* Supporter Option - Requires Application */}
+              <div className={`p-4 rounded-lg border-2 transition-all ${
+                isSupporter ? "border-primary bg-primary/5" : "border-border"
+              }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-swap-sky/20 flex items-center justify-center">
                       <Sparkles className="h-5 w-5 text-swap-sky" />
                     </div>
                     <div>
-                      <p className="font-medium">Supporter Only</p>
+                      <p className="font-medium">Supporter</p>
                       <p className="text-sm text-muted-foreground">Provide resources like stays, meals, etc.</p>
                     </div>
                   </div>
                   {isSupporter && <Check className="h-5 w-5 text-primary" />}
                 </div>
-              </div>
-
-              <div
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  isBoth ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                }`}
-                onClick={() => !togglingRole && toggleUserType(null)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-swap-gold/20 flex items-center justify-center">
-                      <Star className="h-5 w-5 text-swap-gold" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Both</p>
-                      <p className="text-sm text-muted-foreground">Be a changemaker and a supporter</p>
-                    </div>
+                
+                {!isSupporter && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    {loadingAppStatus ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Checking status...
+                      </div>
+                    ) : supporterAppStatus === "pending" ? (
+                      <div className="flex items-center gap-2 text-sm text-swap-gold">
+                        <AlertCircle className="h-4 w-4" />
+                        Application pending review
+                      </div>
+                    ) : supporterAppStatus === "rejected" ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          Previous application was not approved
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate("/supporter-application")}
+                        >
+                          Apply Again
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => navigate("/supporter-application")}
+                      >
+                        Apply to Become a Supporter
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Becoming a supporter requires admin approval to ensure community safety.
+                    </p>
                   </div>
-                  {isBoth && <Check className="h-5 w-5 text-primary" />}
-                </div>
+                )}
               </div>
             </div>
             {togglingRole && (
