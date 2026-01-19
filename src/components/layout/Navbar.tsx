@@ -1,8 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,13 +38,14 @@ const navItems = [
   { label: "Feed", path: "/", icon: Home },
   { label: "Create Listing", path: "/create", icon: Plus },
   { label: "Saved", path: "/saved", icon: Star },
-  { label: "Messages", path: "/messages", icon: MessageSquare },
+  { label: "Messages", path: "/messages", icon: MessageSquare, showBadge: true },
   { label: "Rewards", path: "/rewards", icon: Gift },
   { label: "My Codes", path: "/my-codes", icon: Ticket },
 ];
 
 export const Navbar = () => {
   const { user, profile, isAdmin, signOut } = useAuth();
+  const { unreadCount: unreadMessages } = useUnreadMessages();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -74,17 +78,23 @@ export const Navbar = () => {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
+            const badgeCount = item.showBadge && item.path === "/messages" ? unreadMessages : 0;
             return (
               <Link key={item.path} to={item.path}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "gap-2 transition-all",
+                    "gap-2 transition-all relative",
                     isActive && "bg-muted"
                   )}
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}
+                  {badgeCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center p-0 text-xs bg-primary">
+                      {badgeCount > 99 ? "99+" : badgeCount}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
             );
@@ -108,6 +118,9 @@ export const Navbar = () => {
 
         {/* User Section */}
         <div className="flex items-center gap-3">
+          {/* Notification Bell */}
+          {profile && <NotificationBell />}
+          
           {/* Points Badge - Clickable */}
           {profile && (
             <Link to="/points-history">

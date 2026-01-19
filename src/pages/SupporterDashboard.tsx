@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Plus, Gift, FileText, Users, Star, MessageSquare, ExternalLink } from "lucide-react";
+import { Loader2, Plus, Gift, FileText, Users, Star, MessageSquare, ExternalLink, QrCode } from "lucide-react";
 import { ListingCard } from "@/components/listings/ListingCard";
 
 const SupporterDashboard = () => {
@@ -153,6 +153,7 @@ const SupporterDashboard = () => {
           <TabsList>
             <TabsTrigger value="listings">My Listings</TabsTrigger>
             <TabsTrigger value="rewards">My Rewards</TabsTrigger>
+            <TabsTrigger value="verify">Verify Codes</TabsTrigger>
           </TabsList>
 
           {/* Listings Tab */}
@@ -247,6 +248,33 @@ const SupporterDashboard = () => {
                   To offer rewards to changemakers, please contact our team. We'll work with you 
                   to set up reward offerings that benefit the community.
                 </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Verify Codes Tab */}
+          <TabsContent value="verify" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Verify reward codes presented by changemakers
+              </p>
+              <Button onClick={() => navigate("/verify-code")} className="gap-2">
+                <QrCode className="h-4 w-4" />
+                Open Code Scanner
+              </Button>
+            </div>
+
+            <Card>
+              <CardContent className="py-12 text-center">
+                <QrCode className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+                <h3 className="font-semibold mb-1">Verify Changemaker Codes</h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+                  When a changemaker presents a reward code, use the verification tool to confirm 
+                  it's valid and mark it as redeemed after providing the service.
+                </p>
+                <Button onClick={() => navigate("/verify-code")}>
+                  Verify a Code
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
