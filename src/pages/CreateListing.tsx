@@ -13,6 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
+
+type ListingType = Database["public"]["Enums"]["listing_type"];
 
 const CreateListing = () => {
   const { user } = useAuth();
@@ -20,7 +23,7 @@ const CreateListing = () => {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [listingType, setListingType] = useState<string>("");
+  const [listingType, setListingType] = useState<ListingType | "">("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
@@ -35,7 +38,7 @@ const CreateListing = () => {
     setSubmitting(true);
     const { error } = await supabase.from("listings").insert({
       creator_user_id: user!.id,
-      listing_type: listingType,
+      listing_type: listingType as ListingType,
       title,
       description,
       photo_urls: photos,
@@ -84,7 +87,7 @@ const CreateListing = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label>Listing Type *</Label>
-                <Select value={listingType} onValueChange={setListingType}>
+                <Select value={listingType} onValueChange={(v) => setListingType(v as ListingType)}>
                   <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="help_request">Help Request</SelectItem>
