@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import QuestDetail from "./pages/QuestDetail";
 import CreateListing from "./pages/CreateListing";
 import ListingDetail from "./pages/ListingDetail";
@@ -32,6 +33,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/quests/:id" element={<ProtectedRoute><QuestDetail /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />

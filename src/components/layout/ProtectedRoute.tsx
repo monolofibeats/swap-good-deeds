@@ -11,7 +11,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAdmin = false,
 }) => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, profile, isAdmin, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -27,6 +27,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Redirect to onboarding if not completed (but allow access to onboarding page itself)
+  if (profile && !profile.onboarding_completed && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
   }
 
   if (requireAdmin && !isAdmin) {

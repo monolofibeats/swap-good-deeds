@@ -374,10 +374,13 @@ export type Database = {
           display_name: string
           id: string
           level: number
+          onboarding_completed: boolean | null
           referral_code: string | null
           swap_points: number
           updated_at: string
           user_id: string
+          user_type: Database["public"]["Enums"]["user_type"] | null
+          username: string | null
           xp: number
         }
         Insert: {
@@ -386,10 +389,13 @@ export type Database = {
           display_name?: string
           id?: string
           level?: number
+          onboarding_completed?: boolean | null
           referral_code?: string | null
           swap_points?: number
           updated_at?: string
           user_id: string
+          user_type?: Database["public"]["Enums"]["user_type"] | null
+          username?: string | null
           xp?: number
         }
         Update: {
@@ -398,10 +404,13 @@ export type Database = {
           display_name?: string
           id?: string
           level?: number
+          onboarding_completed?: boolean | null
           referral_code?: string | null
           swap_points?: number
           updated_at?: string
           user_id?: string
+          user_type?: Database["public"]["Enums"]["user_type"] | null
+          username?: string | null
           xp?: number
         }
         Relationships: []
@@ -686,6 +695,7 @@ export type Database = {
         Returns: undefined
       }
       generate_redemption_code: { Args: never; Returns: string }
+      generate_unique_username: { Args: { base_name: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -730,6 +740,7 @@ export type Database = {
       redemption_status: "issued" | "redeemed" | "expired"
       reward_category: "food" | "shower" | "bed" | "discount" | "other"
       submission_status: "pending" | "approved" | "rejected"
+      user_type: "helper" | "supporter"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -877,6 +888,7 @@ export const Constants = {
       redemption_status: ["issued", "redeemed", "expired"],
       reward_category: ["food", "shower", "bed", "discount", "other"],
       submission_status: ["pending", "approved", "rejected"],
+      user_type: ["helper", "supporter"],
     },
   },
 } as const
