@@ -24,6 +24,7 @@ import Messages from "./pages/Messages";
 import SupporterApplication from "./pages/SupporterApplication";
 import SupporterDashboard from "./pages/SupporterDashboard";
 import VerifyCode from "./pages/VerifyCode";
+import MyActivity from "./pages/MyActivity";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/listing/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />
             <Route path="/listings/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />
             <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+            <Route path="/my" element={<ProtectedRoute><MyActivity /></ProtectedRoute>} />
             <Route path="/my-codes" element={<ProtectedRoute><MyCodes /></ProtectedRoute>} />
             <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
