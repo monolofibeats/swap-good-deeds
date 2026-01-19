@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { NewConversationDialog } from "@/components/messages/NewConversationDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [newConvDialogOpen, setNewConvDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchConversations();
@@ -259,10 +261,20 @@ const Messages = () => {
                   <MessageSquare className="h-5 w-5" />
                   Messages
                 </CardTitle>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" onClick={() => setNewConvDialogOpen(true)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              <NewConversationDialog
+                open={newConvDialogOpen}
+                onOpenChange={setNewConvDialogOpen}
+                onConversationCreated={(convId) => {
+                  fetchConversations();
+                  const conv = conversations.find(c => c.id === convId);
+                  if (conv) setSelectedConversation(conv);
+                }}
+                existingConversations={conversations}
+              />
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-hidden">
               <ScrollArea className="h-full">

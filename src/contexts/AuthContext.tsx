@@ -6,11 +6,14 @@ interface Profile {
   id: string;
   user_id: string;
   display_name: string;
+  username: string | null;
   swap_points: number;
   xp: number;
   level: number;
   avatar_url: string | null;
   referral_code: string;
+  user_type: 'helper' | 'supporter' | null;
+  onboarding_completed: boolean;
   created_at: string;
   updated_at: string;
 }
