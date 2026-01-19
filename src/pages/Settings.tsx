@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -10,7 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Camera, User, Trophy, Star, Copy, Check, Share2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Camera, User, Trophy, Star, Copy, Check, Share2, Moon, Sun } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Level calculation: XP needed = level^2 * 25
@@ -27,6 +28,13 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // Check current theme on mount
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
 
   const currentXp = (profile as any)?.xp || 0;
   const currentLevel = (profile as any)?.level || calculateLevel(currentXp);
@@ -92,6 +100,21 @@ const Settings = () => {
       await refreshProfile();
       toast({ title: "Profile updated!" });
     }
+  };
+
+  const toggleTheme = () => {
+    const newIsDark = !isDarkMode;
+    setIsDarkMode(newIsDark);
+    
+    if (newIsDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Save preference to localStorage
+    localStorage.setItem('swap-theme', newIsDark ? 'dark' : 'light');
+    toast({ title: newIsDark ? "Dark mode enabled" : "Light mode enabled" });
   };
 
   const copyReferralLink = () => {
@@ -188,6 +211,36 @@ const Settings = () => {
             <div className="space-y-2">
               <Label>Email</Label>
               <Input value={user?.email || ""} disabled className="bg-muted" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Appearance Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {isDarkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              Appearance
+            </CardTitle>
+            <CardDescription>Customize how SWAP looks for you</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="dark-mode" className="text-base">Dark Mode</Label>
+                <p className="text-sm text-muted-foreground">
+                  {isDarkMode ? "Using dark theme for eye comfort" : "Using light theme"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Sun className={`h-4 w-4 ${!isDarkMode ? 'text-swap-gold' : 'text-muted-foreground'}`} />
+                <Switch
+                  id="dark-mode"
+                  checked={isDarkMode}
+                  onCheckedChange={toggleTheme}
+                />
+                <Moon className={`h-4 w-4 ${isDarkMode ? 'text-swap-sky' : 'text-muted-foreground'}`} />
+              </div>
             </div>
           </CardContent>
         </Card>
