@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, Rocket, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -59,7 +59,7 @@ const CreateListing = () => {
   if (submitted) {
     return (
       <AppLayout>
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-lg mx-auto space-y-6">
           <Card className="border-primary/50 bg-primary/5">
             <CardContent className="flex flex-col items-center gap-4 py-12">
               <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
@@ -68,6 +68,30 @@ const CreateListing = () => {
               <h3 className="font-semibold text-xl">Listing Submitted!</h3>
               <p className="text-muted-foreground text-center">Your listing is pending admin approval. It will appear in the feed once approved.</p>
               <Button onClick={() => navigate("/")} className="mt-4">Back to Feed</Button>
+            </CardContent>
+          </Card>
+          
+          {/* Promotion CTA */}
+          <Card className="bg-gradient-to-br from-swap-gold/10 to-swap-earth/10 border-swap-gold/30">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-full bg-swap-gold/20 flex items-center justify-center flex-shrink-0">
+                  <Rocket className="h-6 w-6 text-swap-gold" />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-swap-gold" />
+                    Want more visibility?
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Once approved, you can promote your listing to get pinned at the top of the feed, 
+                    get a special badge, and attract more helpers faster!
+                  </p>
+                  <p className="text-sm font-medium text-swap-gold">
+                    Look for the "Boost Visibility" button on your listing page.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

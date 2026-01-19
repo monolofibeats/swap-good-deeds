@@ -7,12 +7,13 @@ import { CreatorCard } from "@/components/shared/CreatorCard";
 import { LocationMap } from "@/components/shared/LocationMap";
 import { FavoriteButton } from "@/components/shared/FavoriteButton";
 import { ShareButton } from "@/components/shared/ShareButton";
+import { PromoteModal } from "@/components/promotions/PromoteModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, MapPin, Eye, HelpCircle, Briefcase, Heart, Check, HandHeart, Wrench } from "lucide-react";
+import { Loader2, MapPin, Eye, HelpCircle, Briefcase, Heart, Check, HandHeart, Wrench, Rocket, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateEU } from "@/lib/dateUtils";
 
@@ -93,6 +94,8 @@ const ListingDetail = () => {
   const config = typeConfig[listing.listing_type] || typeConfig.help_request;
   const Icon = config.icon;
   const photos = listing.photo_urls || [];
+  const isOwner = user?.id === listing.creator_user_id;
+  const isPromoted = listing.is_promoted && new Date(listing.promotion_expires_at) > new Date();
 
   return (
     <AppLayout>
@@ -118,6 +121,11 @@ const ListingDetail = () => {
                       <Icon className="h-5 w-5" />
                     </div>
                     <Badge variant="secondary">{config.label}</Badge>
+                    {isPromoted && (
+                      <Badge className="bg-gradient-to-r from-swap-gold to-swap-earth text-background gap-1">
+                        <Sparkles className="h-3 w-3" /> Promoted
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <FavoriteButton listingId={id} />
@@ -171,6 +179,28 @@ const ListingDetail = () => {
 
           {/* Sidebar */}
           <div className="space-y-4">
+            {/* Promotion CTA for owners */}
+            {isOwner && (
+              <Card className="bg-gradient-to-br from-swap-gold/10 to-swap-earth/10 border-swap-gold/30">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Rocket className="h-5 w-5 text-swap-gold" />
+                    <h3 className="font-semibold">Boost Your Listing!</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Get more visibility, appear at the top of feeds, and get responses faster.
+                  </p>
+                  <PromoteModal
+                    itemType="listing"
+                    itemId={id || ""}
+                    itemTitle={listing.title}
+                    isOwner={isOwner}
+                    isPromoted={isPromoted}
+                  />
+                </CardContent>
+              </Card>
+            )}
+            
             {creator && (
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-3">Posted by</h3>

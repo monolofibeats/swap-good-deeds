@@ -8,10 +8,11 @@ import { LocationMap } from "@/components/shared/LocationMap";
 import { FavoriteButton } from "@/components/shared/FavoriteButton";
 import { ShareButton } from "@/components/shared/ShareButton";
 import { CreatorCard } from "@/components/shared/CreatorCard";
+import { PromoteModal } from "@/components/promotions/PromoteModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Eye, Leaf, Trash2, Heart, Check, Camera } from "lucide-react";
+import { Loader2, Eye, Leaf, Trash2, Heart, Check, Camera, Sparkles, Rocket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateEU } from "@/lib/dateUtils";
 
@@ -86,6 +87,7 @@ const QuestDetail = () => {
   if (!quest) return <AppLayout><div className="text-center py-20">Quest not found</div></AppLayout>;
 
   const isCleanup = quest.quest_type === "cleanup";
+  const isPromoted = quest.is_promoted && new Date(quest.promotion_expires_at) > new Date();
 
   return (
     <AppLayout>
@@ -101,6 +103,11 @@ const QuestDetail = () => {
                       {isCleanup ? <Trash2 className="h-5 w-5" /> : <Heart className="h-5 w-5" />}
                     </div>
                     <Badge variant="secondary">{isCleanup ? "Cleanup" : "Good Deed"}</Badge>
+                    {isPromoted && (
+                      <Badge className="bg-gradient-to-r from-swap-gold to-swap-earth text-background gap-1">
+                        <Sparkles className="h-3 w-3" /> Promoted
+                      </Badge>
+                    )}
                     <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full">
                       <Leaf className="h-4 w-4 text-primary" />
                       <span className="font-semibold text-primary">+{quest.base_points}</span>
