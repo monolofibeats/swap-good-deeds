@@ -1,1 +1,10 @@
 project_id = "ydhllszwxocivoduqcvl"
+
+[functions.create-points-checkout]
+verify_jwt = false
+
+[functions.send-contact-notification]
+verify_jwt = false
+
+[functions.landing-chat]
+verify_jwt = false

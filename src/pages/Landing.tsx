@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring } from "framer-motion";
 import { Leaf, Camera, Gift, MapPin, Store, Users, ArrowRight, Sparkles, Globe, Zap, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSwitcher from "@/components/landing/LanguageSwitcher";
+import EarthAnimation from "@/components/landing/EarthAnimation";
+import HelpChatbot from "@/components/landing/HelpChatbot";
 
 // Animated counter component with improved animation
 const AnimatedCounter = ({ end, duration = 2, suffix = "" }: { end: number; duration?: number; suffix?: string }) => {
@@ -55,7 +59,6 @@ const CursorGlow = () => {
         translateY: "-50%",
       }}
     >
-      {/* Main glow */}
       <motion.div
         className="absolute rounded-full"
         style={{
@@ -66,7 +69,6 @@ const CursorGlow = () => {
           translateY: "-50%",
         }}
       />
-      {/* Inner bright spot */}
       <motion.div
         className="absolute rounded-full"
         style={{
@@ -77,7 +79,6 @@ const CursorGlow = () => {
           translateY: "-50%",
         }}
       />
-      {/* Tiny core */}
       <motion.div
         className="absolute rounded-full blur-sm"
         style={{
@@ -96,10 +97,9 @@ const CursorGlow = () => {
 const AccumulatingParticles = () => {
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; opacity: number; delay: number }>>([]);
   const maxParticles = 200;
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
-    // Start with some initial particles
     const initialParticles = Array.from({ length: 30 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
@@ -110,7 +110,6 @@ const AccumulatingParticles = () => {
     }));
     setParticles(initialParticles);
 
-    // Add new particles over time
     const interval = setInterval(() => {
       setParticles(prev => {
         if (prev.length >= maxParticles) return prev;
@@ -126,13 +125,13 @@ const AccumulatingParticles = () => {
         
         return [...prev, newParticle];
       });
-    }, 800); // Add a new particle every 800ms
+    }, 800);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div ref={containerRef} className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-[1]">
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
@@ -157,40 +156,17 @@ const AccumulatingParticles = () => {
           }}
         />
       ))}
-      {/* Particle counter - subtle indicator */}
       <motion.div 
-        className="fixed bottom-6 right-6 text-xs text-muted-foreground/30 font-mono"
+        className="fixed bottom-6 right-6 text-xs text-muted-foreground/30 font-mono z-50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 5 }}
       >
-        {particles.length} small actions
+        {particles.length} {t("particles.counter")}
       </motion.div>
     </div>
   );
 };
-
-// Animated grid background
-const GridBackground = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-    <div 
-      className="absolute inset-0"
-      style={{
-        backgroundImage: `
-          linear-gradient(hsl(145 60% 40% / 0.1) 1px, transparent 1px),
-          linear-gradient(90deg, hsl(145 60% 40% / 0.1) 1px, transparent 1px)
-        `,
-        backgroundSize: '100px 100px',
-      }}
-    />
-    <motion.div
-      className="absolute inset-0"
-      style={{
-        background: 'radial-gradient(ellipse at center, transparent 0%, hsl(220 20% 8%) 70%)',
-      }}
-    />
-  </div>
-);
 
 // Glowing orb decoration
 const GlowingOrb = ({ className, color = "green", size = "lg" }: { className?: string; color?: "green" | "blue" | "gold"; size?: "sm" | "md" | "lg" }) => {
@@ -222,22 +198,23 @@ const GlowingOrb = ({ className, color = "green", size = "lg" }: { className?: s
   );
 };
 
-// Step card component with enhanced animations
+// Step card component with translations
 const StepCard = ({ 
   step, 
   icon: Icon, 
-  title, 
-  items, 
+  titleKey,
+  itemKeys, 
   delay 
 }: { 
   step: number; 
   icon: React.ElementType; 
-  title: string; 
-  items: string[]; 
+  titleKey: string;
+  itemKeys: string[]; 
   delay: number;
 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const { t } = useLanguage();
 
   return (
     <motion.div
@@ -266,9 +243,9 @@ const StepCard = ({
             <span className="text-2xl font-bold text-gradient-swap">{step}</span>
           </div>
         </div>
-        <h3 className="text-2xl font-semibold mb-5 text-foreground group-hover:text-gradient-swap transition-all duration-300">{title}</h3>
+        <h3 className="text-2xl font-semibold mb-5 text-foreground group-hover:text-gradient-swap transition-all duration-300">{t(titleKey)}</h3>
         <ul className="space-y-3">
-          {items.map((item, i) => (
+          {itemKeys.map((itemKey, i) => (
             <motion.li 
               key={i} 
               className="flex items-center gap-3 text-muted-foreground"
@@ -281,7 +258,7 @@ const StepCard = ({
                 animate={{ scale: [1, 1.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
               />
-              {item}
+              {t(itemKey)}
             </motion.li>
           ))}
         </ul>
@@ -290,22 +267,23 @@ const StepCard = ({
   );
 };
 
-// Use case card component with enhanced effects
+// Use case card component
 const UseCaseCard = ({ 
   icon: Icon, 
-  title, 
-  description, 
+  titleKey, 
+  descKey, 
   delay,
   accentColor = "green"
 }: { 
   icon: React.ElementType; 
-  title: string; 
-  description: string; 
+  titleKey: string; 
+  descKey: string; 
   delay: number;
   accentColor?: "green" | "blue" | "gold";
 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const { t } = useLanguage();
   
   const colors = {
     green: "from-swap-green/20 to-swap-green/5",
@@ -334,18 +312,19 @@ const UseCaseCard = ({
           >
             <Icon className="w-8 h-8 text-swap-green" />
           </motion.div>
-          <h3 className="text-xl font-semibold mb-3 text-foreground group-hover:text-swap-green transition-colors duration-300">{title}</h3>
-          <p className="text-muted-foreground leading-relaxed">{description}</p>
+          <h3 className="text-xl font-semibold mb-3 text-foreground group-hover:text-swap-green transition-colors duration-300">{t(titleKey)}</h3>
+          <p className="text-muted-foreground leading-relaxed">{t(descKey)}</p>
         </div>
       </div>
     </motion.div>
   );
 };
 
-// Improved Stats card - uniform sizing
-const StatCard = ({ value, suffix, label, delay }: { value: number; suffix: string; label: string; delay: number }) => {
+// Stats card with glow effect
+const StatCard = ({ value, suffix, labelKey, delay }: { value: number; suffix: string; labelKey: string; delay: number }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
+  const { t } = useLanguage();
 
   return (
     <motion.div
@@ -369,7 +348,7 @@ const StatCard = ({ value, suffix, label, delay }: { value: number; suffix: stri
             {suffix}
           </span>
         </motion.div>
-        <p className="text-muted-foreground text-base font-medium text-center">{label}</p>
+        <p className="text-muted-foreground text-base font-medium text-center">{t(labelKey)}</p>
       </div>
     </motion.div>
   );
@@ -380,9 +359,19 @@ const Landing = () => {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.12], [1, 0.9]);
   const heroY = useTransform(scrollYProgress, [0, 0.12], [0, 80]);
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      {/* Earth Animation Background */}
+      <EarthAnimation />
+      
+      {/* Language Switcher */}
+      <LanguageSwitcher />
+      
+      {/* Help Chatbot */}
+      <HelpChatbot />
+      
       {/* Cursor glow effect */}
       <CursorGlow />
       
@@ -396,9 +385,6 @@ const Landing = () => {
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <GridBackground />
-        
-        {/* Animated background gradients */}
         <div className="absolute inset-0">
           <GlowingOrb className="top-1/4 -left-1/4" color="green" size="lg" />
           <GlowingOrb className="bottom-1/4 -right-1/4" color="blue" size="lg" />
@@ -426,7 +412,7 @@ const Landing = () => {
               >
                 <Sparkles className="w-4 h-4" />
               </motion.div>
-              Now available worldwide
+              {t("hero.badge")}
               <Globe className="w-4 h-4 ml-1 opacity-60" />
             </motion.div>
           </motion.div>
@@ -443,7 +429,7 @@ const Landing = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              Do good.
+              {t("hero.title1")}
             </motion.span>
             <motion.span 
               className="block text-gradient-swap"
@@ -451,7 +437,7 @@ const Landing = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.35 }}
             >
-              Get back.
+              {t("hero.title2")}
             </motion.span>
             <motion.span 
               className="block text-muted-foreground/70"
@@ -459,7 +445,7 @@ const Landing = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
             >
-              Change the planet.
+              {t("hero.title3")}
             </motion.span>
           </motion.h1>
 
@@ -469,8 +455,7 @@ const Landing = () => {
             transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-14 leading-relaxed"
           >
-            SWAP is a global platform where people help the planet and each other —
-            and get rewarded by local businesses.
+            {t("hero.subtitle")}
           </motion.p>
 
           <motion.div
@@ -492,7 +477,7 @@ const Landing = () => {
                     transition={{ duration: 0.6 }}
                   />
                   <span className="relative flex items-center gap-2">
-                    Join SWAP
+                    {t("hero.cta.join")}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </Button>
@@ -505,7 +490,7 @@ const Landing = () => {
                   size="lg"
                   className="px-10 py-7 text-lg font-semibold border-border/50 hover:border-swap-green/50 hover:bg-swap-green/5 transition-all duration-300 backdrop-blur-sm"
                 >
-                  See how it works
+                  {t("hero.cta.how")}
                 </Button>
               </motion.div>
             </a>
@@ -556,10 +541,10 @@ const Landing = () => {
               <Zap className="w-8 h-8 text-swap-green" />
             </motion.div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-              How SWAP <span className="text-gradient-swap">works</span>
+              {t("how.title")} <span className="text-gradient-swap">{t("how.title2")}</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-              Three simple steps to make an impact and earn rewards.
+              {t("how.subtitle")}
             </p>
           </motion.div>
 
@@ -567,22 +552,22 @@ const Landing = () => {
             <StepCard
               step={1}
               icon={Leaf}
-              title="Do something good"
-              items={["Clean a beach", "Help a local business", "Support your community"]}
+              titleKey="how.step1.title"
+              itemKeys={["how.step1.item1", "how.step1.item2", "how.step1.item3"]}
               delay={0}
             />
             <StepCard
               step={2}
               icon={Camera}
-              title="Get verified"
-              items={["Upload proof", "Reviewed by humans, not bots", "Earn trust over time"]}
+              titleKey="how.step2.title"
+              itemKeys={["how.step2.item1", "how.step2.item2", "how.step2.item3"]}
               delay={0.2}
             />
             <StepCard
               step={3}
               icon={Gift}
-              title="Get rewarded"
-              items={["Earn SWAP Points", "Redeem food, showers, beds", "Unlock local discounts"]}
+              titleKey="how.step3.title"
+              itemKeys={["how.step3.item1", "how.step3.item2", "how.step3.item3"]}
               delay={0.4}
             />
           </div>
@@ -617,18 +602,18 @@ const Landing = () => {
               <Heart className="w-8 h-8 text-swap-green" />
             </motion.div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-              Our <span className="text-gradient-swap">impact</span>
+              {t("impact.title")} <span className="text-gradient-swap">{t("impact.title2")}</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-              Numbers that speak louder than words.
+              {t("impact.subtitle")}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard value={100} suffix="M+" label="Users by 2030" delay={0} />
-            <StatCard value={12} suffix="M+" label="Cleanup actions" delay={0.1} />
-            <StatCard value={4} suffix="M+ kg" label="Waste removed" delay={0.2} />
-            <StatCard value={25} suffix="K+" label="Local partners" delay={0.3} />
+            <StatCard value={100} suffix="M+" labelKey="impact.users" delay={0} />
+            <StatCard value={12} suffix="M+" labelKey="impact.cleanups" delay={0.1} />
+            <StatCard value={4} suffix="M+ kg" labelKey="impact.waste" delay={0.2} />
+            <StatCard value={25} suffix="K+" labelKey="impact.partners" delay={0.3} />
           </div>
         </div>
       </section>
@@ -655,32 +640,32 @@ const Landing = () => {
               <Users className="w-8 h-8 text-swap-green" />
             </motion.div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-              Built for <span className="text-gradient-swap">everyone</span>
+              {t("usecases.title")} <span className="text-gradient-swap">{t("usecases.title2")}</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-              Whether you're traveling, local, or running a business.
+              {t("usecases.subtitle")}
             </p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
             <UseCaseCard
               icon={MapPin}
-              title="For Travelers & Campers"
-              description="Do good wherever you are. Get food, showers, or a place to stay in exchange for helping local communities."
+              titleKey="usecases.travelers.title"
+              descKey="usecases.travelers.desc"
               delay={0}
               accentColor="green"
             />
             <UseCaseCard
               icon={Users}
-              title="For Locals"
-              description="Improve your city and get rewarded. Turn your neighborhood cleanup into real value."
+              titleKey="usecases.locals.title"
+              descKey="usecases.locals.desc"
               delay={0.15}
               accentColor="blue"
             />
             <UseCaseCard
               icon={Store}
-              title="For Businesses"
-              description="Support your community and attract conscious customers. Become a SWAP partner."
+              titleKey="usecases.business.title"
+              descKey="usecases.business.desc"
               delay={0.3}
               accentColor="gold"
             />
@@ -706,7 +691,7 @@ const Landing = () => {
               viewport={{ once: true }}
               transition={{ duration: 2 }}
             >
-              <span className="text-muted-foreground/80">SWAP is not about saving the world alone.</span>
+              <span className="text-muted-foreground/80">{t("philosophy.line1")}</span>
               <br />
               <motion.span 
                 className="text-foreground"
@@ -715,7 +700,7 @@ const Landing = () => {
                 viewport={{ once: true }}
                 transition={{ delay: 0.5, duration: 1 }}
               >
-                It's about millions of small actions —
+                {t("philosophy.line2")}
               </motion.span>
               <br />
               <motion.span 
@@ -725,7 +710,7 @@ const Landing = () => {
                 viewport={{ once: true }}
                 transition={{ delay: 1, duration: 1 }}
               >
-                finally adding up.
+                {t("philosophy.line3")}
               </motion.span>
             </motion.p>
           </motion.div>
@@ -745,9 +730,9 @@ const Landing = () => {
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           >
             <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-              The planet needs action.
+              {t("cta.title1")}
               <br />
-              <span className="text-gradient-swap">SWAP makes it easy.</span>
+              <span className="text-gradient-swap">{t("cta.title2")}</span>
             </h2>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
@@ -764,7 +749,7 @@ const Landing = () => {
                       transition={{ duration: 0.6 }}
                     />
                     <span className="relative flex items-center gap-2">
-                      Join the movement
+                      {t("cta.join")}
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </span>
                   </Button>
@@ -777,7 +762,7 @@ const Landing = () => {
                     size="lg"
                     className="px-10 py-7 text-lg font-semibold border-border/50 hover:border-swap-green/50 hover:bg-swap-green/5 transition-all duration-300 backdrop-blur-sm"
                   >
-                    Create your first quest
+                    {t("cta.create")}
                   </Button>
                 </motion.div>
               </Link>
@@ -801,13 +786,13 @@ const Landing = () => {
             </div>
             
             <nav className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
-              <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
-              <Link to="/rewards" className="hover:text-foreground transition-colors">Rewards</Link>
-              <Link to="/auth" className="hover:text-foreground transition-colors">Sign In</Link>
+              <a href="#how-it-works" className="hover:text-foreground transition-colors">{t("footer.howItWorks")}</a>
+              <Link to="/rewards" className="hover:text-foreground transition-colors">{t("footer.rewards")}</Link>
+              <Link to="/auth" className="hover:text-foreground transition-colors">{t("footer.signIn")}</Link>
             </nav>
             
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Earth Swap. All rights reserved.
+              © {new Date().getFullYear()} Earth Swap. {t("footer.rights")}
             </p>
           </div>
         </div>
