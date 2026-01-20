@@ -24,8 +24,10 @@ import BuyPoints from "./pages/BuyPoints";
 import Messages from "./pages/Messages";
 import SupporterApplication from "./pages/SupporterApplication";
 import SupporterDashboard from "./pages/SupporterDashboard";
+import SupporterCreateListing from "./pages/SupporterCreateListing";
 import VerifyCode from "./pages/VerifyCode";
 import MyActivity from "./pages/MyActivity";
+import EventDetail from "./pages/EventDetail";
 
 const queryClient = new QueryClient();
 
@@ -47,8 +49,10 @@ const App = () => (
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/supporter-application" element={<ProtectedRoute><SupporterApplication /></ProtectedRoute>} />
             <Route path="/supporter" element={<ProtectedRoute requireSupporter><SupporterDashboard /></ProtectedRoute>} />
+            <Route path="/supporter/create-listing" element={<ProtectedRoute requireSupporter><SupporterCreateListing /></ProtectedRoute>} />
             <Route path="/verify-code" element={<ProtectedRoute requireSupporter><VerifyCode /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
             <Route path="/quests/:id" element={<ProtectedRoute><QuestDetail /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
             <Route path="/listing/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />

@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2, HelpCircle } from "lucide-react";
+import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2, HelpCircle, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateEU } from "@/lib/dateUtils";
+import { CreateCommunityEventDialog } from "@/components/events/CreateCommunityEventDialog";
 
 const Admin = () => {
   const { toast } = useToast();
@@ -359,7 +360,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="submissions">
-          <TabsList className="grid w-full max-w-5xl grid-cols-6">
+          <TabsList className="grid w-full max-w-6xl grid-cols-7">
             <TabsTrigger value="submissions">
               Submissions ({submissions.length})
             </TabsTrigger>
@@ -372,6 +373,10 @@ const Admin = () => {
             <TabsTrigger value="supporters">
               Supporters ({supporterApps.length})
             </TabsTrigger>
+            <TabsTrigger value="events">
+              <Heart className="h-3 w-3 mr-1" />
+              Events
+            </TabsTrigger>
             <TabsTrigger value="support">
               Support ({supportTickets.length})
             </TabsTrigger>
@@ -379,6 +384,14 @@ const Admin = () => {
               Users ({users.length})
             </TabsTrigger>
           </TabsList>
+
+          {/* Community Events Tab */}
+          <TabsContent value="events" className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-muted-foreground">Create and manage community events</p>
+              <CreateCommunityEventDialog onEventCreated={fetchData} />
+            </div>
+          </TabsContent>
 
           {/* Submissions Tab */}
           <TabsContent value="submissions" className="mt-6 space-y-4">

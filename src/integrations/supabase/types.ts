@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_events: {
+        Row: {
+          cause: string
+          created_at: string
+          created_by: string
+          description: string | null
+          ends_at: string | null
+          goal_current: number
+          goal_target: number
+          goal_type: Database["public"]["Enums"]["event_goal_type"]
+          goal_unit: string
+          id: string
+          measurement_description: string
+          photo_url: string | null
+          starts_at: string | null
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cause: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          ends_at?: string | null
+          goal_current?: number
+          goal_target: number
+          goal_type: Database["public"]["Enums"]["event_goal_type"]
+          goal_unit: string
+          id?: string
+          measurement_description: string
+          photo_url?: string | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cause?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          ends_at?: string | null
+          goal_current?: number
+          goal_target?: number
+          goal_type?: Database["public"]["Enums"]["event_goal_type"]
+          goal_unit?: string
+          id?: string
+          measurement_description?: string
+          photo_url?: string | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["event_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -83,6 +140,88 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_contributions: {
+        Row: {
+          amount: number
+          created_at: string
+          event_id: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          event_id: string
+          id?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_contributions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "community_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_submissions: {
+        Row: {
+          contribution_value: number | null
+          created_at: string
+          description: string | null
+          event_id: string
+          id: string
+          photo_url: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["submission_status"]
+          user_id: string
+        }
+        Insert: {
+          contribution_value?: number | null
+          created_at?: string
+          description?: string | null
+          event_id: string
+          id?: string
+          photo_url: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["submission_status"]
+          user_id: string
+        }
+        Update: {
+          contribution_value?: number | null
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          id?: string
+          photo_url?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["submission_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_submissions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "community_events"
             referencedColumns: ["id"]
           },
         ]
@@ -947,6 +1086,8 @@ export type Database = {
         | "level_5"
         | "level_10"
         | "level_25"
+      event_goal_type: "numeric" | "submissions"
+      event_status: "draft" | "active" | "completed" | "cancelled"
       listing_status: "pending" | "approved" | "rejected"
       listing_type:
         | "help_request"
@@ -1099,6 +1240,8 @@ export const Constants = {
         "level_10",
         "level_25",
       ],
+      event_goal_type: ["numeric", "submissions"],
+      event_status: ["draft", "active", "completed", "cancelled"],
       listing_status: ["pending", "approved", "rejected"],
       listing_type: [
         "help_request",

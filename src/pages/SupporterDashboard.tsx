@@ -162,7 +162,7 @@ const SupporterDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Request help from changemakers for tasks like dishwashing, cleaning, etc.
               </p>
-              <Button onClick={() => navigate("/create-listing")} className="gap-2">
+              <Button onClick={() => navigate("/supporter/create-listing")} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create Listing
               </Button>
@@ -176,7 +176,7 @@ const SupporterDashboard = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Create a listing to request help from changemakers
                   </p>
-                  <Button onClick={() => navigate("/create-listing")}>
+                  <Button onClick={() => navigate("/supporter/create-listing")}>
                     Create Your First Listing
                   </Button>
                 </CardContent>
