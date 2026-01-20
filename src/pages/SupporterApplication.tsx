@@ -76,7 +76,7 @@ const SupporterApplication = () => {
         title: "Application submitted!",
         description: "We'll review your application and get back to you soon.",
       });
-      navigate("/");
+      navigate("/home");
     }
   };
 

@@ -1,27 +1,81 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, Loader2, HandHeart, Gift, ArrowRight, Check } from "lucide-react";
+import { Leaf, Loader2, HandHeart, Gift, ArrowRight, Check, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type UserType = "helper" | "supporter";
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [selectedType, setSelectedType] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [existingApplication, setExistingApplication] = useState<{ status: string } | null>(null);
+  const [checkingApplication, setCheckingApplication] = useState(true);
+
+  // Check if user already has a pending/approved supporter application
+  useEffect(() => {
+    const checkExistingApplication = async () => {
+      if (!user) {
+        setCheckingApplication(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("supporter_applications")
+        .select("status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      setExistingApplication(data);
+      setCheckingApplication(false);
+    };
+
+    checkExistingApplication();
+  }, [user]);
+
+  // If user is already a supporter, redirect to home
+  useEffect(() => {
+    if (profile?.user_type === "supporter") {
+      navigate("/home");
+    }
+  }, [profile, navigate]);
 
   const handleContinue = async () => {
     if (!selectedType || !user) return;
 
     setIsLoading(true);
     
-    // If they chose supporter, redirect to application form
+    // If they chose supporter
     if (selectedType === "supporter") {
+      // Check if user is already an approved supporter
+      if (profile?.user_type === "supporter") {
+        await supabase
+          .from("profiles")
+          .update({ onboarding_completed: true })
+          .eq("user_id", user.id);
+        await refreshProfile();
+        navigate("/home");
+        return;
+      }
+
+      // Check if they already have a pending or approved application
+      if (existingApplication?.status === "pending" || existingApplication?.status === "approved") {
+        await supabase
+          .from("profiles")
+          .update({ onboarding_completed: true })
+          .eq("user_id", user.id);
+        await refreshProfile();
+        navigate("/home");
+        return;
+      }
+
       // Mark onboarding as complete but don't set user_type yet (pending approval)
       await supabase
         .from("profiles")
@@ -46,11 +100,15 @@ const Onboarding = () => {
 
     if (!error) {
       await refreshProfile();
-      navigate("/");
+      navigate("/home");
     }
     
     setIsLoading(false);
   };
+
+  const isAlreadySupporter = profile?.user_type === "supporter";
+  const hasPendingApplication = existingApplication?.status === "pending";
+  const hasApprovedApplication = existingApplication?.status === "approved";
 
   const userTypes = [
     {
@@ -66,22 +124,44 @@ const Onboarding = () => {
       icon: HandHeart,
       color: "bg-swap-green/20 text-swap-green border-swap-green/30",
       selectedColor: "bg-swap-green/30 border-swap-green ring-2 ring-swap-green",
+      disabled: false,
     },
     {
       type: "supporter" as UserType,
       title: "Supporter",
-      description: "I represent a business and want to support changemakers",
-      details: [
-        "Offer rewards like meals, showers, or stays",
-        "Create listings for help (e.g., dishwashing)",
-        "Support the community",
-        "Requires admin approval",
-      ],
+      description: isAlreadySupporter 
+        ? "You're already an approved Supporter!" 
+        : hasPendingApplication 
+          ? "Your application is pending review"
+          : hasApprovedApplication
+            ? "Your application was approved!"
+            : "I represent a business and want to support changemakers",
+      details: isAlreadySupporter || hasPendingApplication || hasApprovedApplication
+        ? [
+            isAlreadySupporter ? "✓ You can offer rewards" : hasPendingApplication ? "Application submitted" : "Application approved!",
+            isAlreadySupporter ? "✓ You can create listings" : "We'll notify you when reviewed",
+            isAlreadySupporter ? "✓ Full supporter access" : "Check back soon",
+          ]
+        : [
+            "Offer rewards like meals, showers, or stays",
+            "Create listings for help (e.g., dishwashing)",
+            "Support the community",
+            "Requires admin approval",
+          ],
       icon: Gift,
       color: "bg-swap-gold/20 text-swap-gold border-swap-gold/30",
       selectedColor: "bg-swap-gold/30 border-swap-gold ring-2 ring-swap-gold",
+      disabled: false,
     },
   ];
+
+  if (checkingApplication) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -104,16 +184,29 @@ const Onboarding = () => {
           {userTypes.map((option) => {
             const Icon = option.icon;
             const isSelected = selectedType === option.type;
+            const showStatusBadge = option.type === "supporter" && (isAlreadySupporter || hasPendingApplication || hasApprovedApplication);
             
             return (
               <Card
                 key={option.type}
-                onClick={() => setSelectedType(option.type)}
+                onClick={() => !option.disabled && setSelectedType(option.type)}
                 className={cn(
-                  "cursor-pointer transition-all duration-200 border-2",
+                  "cursor-pointer transition-all duration-200 border-2 relative",
+                  option.disabled && "opacity-50 cursor-not-allowed",
                   isSelected ? option.selectedColor : "border-border/50 hover:border-border"
                 )}
               >
+                {showStatusBadge && (
+                  <div className={cn(
+                    "absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                    isAlreadySupporter ? "bg-swap-green/20 text-swap-green" :
+                    hasPendingApplication ? "bg-swap-gold/20 text-swap-gold" :
+                    "bg-swap-green/20 text-swap-green"
+                  )}>
+                    <CheckCircle2 className="w-3 h-3" />
+                    {isAlreadySupporter ? "Active" : hasPendingApplication ? "Pending" : "Approved"}
+                  </div>
+                )}
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
                     <div className={cn("flex h-12 w-12 items-center justify-center rounded-xl", option.color)}>
@@ -155,11 +248,16 @@ const Onboarding = () => {
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              {selectedType === "supporter" ? "Continuing to application..." : "Setting up your account..."}
+              {selectedType === "supporter" ? "Continuing..." : "Setting up your account..."}
             </>
           ) : (
             <>
-              {selectedType === "supporter" ? "Continue to Application" : "Continue"}
+              {selectedType === "supporter" 
+                ? (isAlreadySupporter || hasPendingApplication || hasApprovedApplication) 
+                  ? "Continue to Home" 
+                  : "Continue to Application"
+                : "Continue"
+              }
               <ArrowRight className="h-4 w-4" />
             </>
           )}
@@ -167,7 +265,14 @@ const Onboarding = () => {
 
         <p className="text-center text-sm text-muted-foreground">
           {selectedType === "supporter" 
-            ? "Supporter accounts require admin approval" 
+            ? (isAlreadySupporter 
+                ? "You already have supporter access" 
+                : hasPendingApplication 
+                  ? "Your application is being reviewed"
+                  : hasApprovedApplication
+                    ? "Your supporter access is ready!"
+                    : "Supporter accounts require admin approval"
+              )
             : "You can change this later in your settings"}
         </p>
       </div>
