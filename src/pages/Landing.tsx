@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring } from "framer-motion";
 import { Leaf, Camera, Gift, MapPin, Store, Users, ArrowRight, Sparkles, Globe, Zap, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -17,7 +17,6 @@ const AnimatedCounter = ({ end, duration = 2, suffix = "" }: { end: number; dura
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
       const progress = Math.min((currentTime - startTime) / (duration * 1000), 1);
-      // Eased progress for smoother animation
       const easedProgress = 1 - Math.pow(1 - progress, 3);
       setCount(Math.floor(easedProgress * end));
       if (progress < 1) requestAnimationFrame(animate);
@@ -28,58 +27,145 @@ const AnimatedCounter = ({ end, duration = 2, suffix = "" }: { end: number; dura
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-// Enhanced floating particles background with multiple layers
-const ParticleField = () => {
+// Cursor-following glow effect
+const CursorGlow = () => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  
+  const smoothX = useSpring(mouseX, { stiffness: 50, damping: 20 });
+  const smoothY = useSpring(mouseY, { stiffness: 50, damping: 20 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [mouseX, mouseY]);
+
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Large floating orbs */}
-      {[...Array(8)].map((_, i) => (
+    <motion.div
+      className="fixed pointer-events-none z-30"
+      style={{
+        x: smoothX,
+        y: smoothY,
+        translateX: "-50%",
+        translateY: "-50%",
+      }}
+    >
+      {/* Main glow */}
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          width: 400,
+          height: 400,
+          background: "radial-gradient(circle, hsl(145 60% 45% / 0.08) 0%, hsl(200 60% 45% / 0.04) 40%, transparent 70%)",
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+      />
+      {/* Inner bright spot */}
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          width: 150,
+          height: 150,
+          background: "radial-gradient(circle, hsl(145 60% 50% / 0.15) 0%, transparent 70%)",
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+      />
+      {/* Tiny core */}
+      <motion.div
+        className="absolute rounded-full blur-sm"
+        style={{
+          width: 30,
+          height: 30,
+          background: "radial-gradient(circle, hsl(145 60% 55% / 0.3) 0%, transparent 70%)",
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+      />
+    </motion.div>
+  );
+};
+
+// Accumulating particles - symbolizing small actions adding up
+const AccumulatingParticles = () => {
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; opacity: number; delay: number }>>([]);
+  const maxParticles = 200;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Start with some initial particles
+    const initialParticles = Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 3 + 1,
+      opacity: Math.random() * 0.4 + 0.2,
+      delay: Math.random() * 2,
+    }));
+    setParticles(initialParticles);
+
+    // Add new particles over time
+    const interval = setInterval(() => {
+      setParticles(prev => {
+        if (prev.length >= maxParticles) return prev;
+        
+        const newParticle = {
+          id: Date.now() + Math.random(),
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          size: Math.random() * 3 + 1,
+          opacity: Math.random() * 0.5 + 0.2,
+          delay: 0,
+        };
+        
+        return [...prev, newParticle];
+      });
+    }, 800); // Add a new particle every 800ms
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      {particles.map((particle) => (
         <motion.div
-          key={`orb-${i}`}
-          className="absolute rounded-full blur-3xl"
+          key={particle.id}
+          className="absolute rounded-full"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ 
+            opacity: particle.opacity,
+            scale: 1,
+          }}
+          transition={{ 
+            duration: 2,
+            delay: particle.delay,
+            ease: "easeOut",
+          }}
           style={{
-            width: Math.random() * 300 + 200,
-            height: Math.random() * 300 + 200,
-            background: i % 2 === 0 
-              ? `radial-gradient(circle, hsl(145 60% 40% / 0.08) 0%, transparent 70%)`
-              : `radial-gradient(circle, hsl(200 60% 40% / 0.06) 0%, transparent 70%)`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            x: [0, Math.random() * 100 - 50, 0],
-            y: [0, Math.random() * 100 - 50, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: Math.random() * 20 + 20,
-            repeat: Infinity,
-            ease: "linear",
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+            width: particle.size,
+            height: particle.size,
+            background: `radial-gradient(circle, hsl(145 60% 50% / ${particle.opacity + 0.2}) 0%, hsl(145 60% 45% / ${particle.opacity}) 100%)`,
+            boxShadow: `0 0 ${particle.size * 2}px hsl(145 60% 50% / ${particle.opacity * 0.5})`,
           }}
         />
       ))}
-      {/* Small particles */}
-      {[...Array(60)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 rounded-full bg-swap-green/30"
-          initial={{
-            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1920),
-            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1080),
-          }}
-          animate={{
-            y: [null, Math.random() * -300 - 100],
-            opacity: [0, 0.8, 0],
-            scale: [0.5, 1, 0.5],
-          }}
-          transition={{
-            duration: Math.random() * 15 + 10,
-            repeat: Infinity,
-            delay: Math.random() * 8,
-            ease: "linear",
-          }}
-        />
-      ))}
+      {/* Particle counter - subtle indicator */}
+      <motion.div 
+        className="fixed bottom-6 right-6 text-xs text-muted-foreground/30 font-mono"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 5 }}
+      >
+        {particles.length} small actions
+      </motion.div>
     </div>
   );
 };
@@ -256,7 +342,7 @@ const UseCaseCard = ({
   );
 };
 
-// Stats card with glow effect
+// Improved Stats card - uniform sizing
 const StatCard = ({ value, suffix, label, delay }: { value: number; suffix: string; label: string; delay: number }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
@@ -269,18 +355,21 @@ const StatCard = ({ value, suffix, label, delay }: { value: number; suffix: stri
       transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
       className="relative group"
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-swap-green/10 to-transparent rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="relative bg-card/30 backdrop-blur-sm border border-border/20 rounded-2xl p-6 text-center group-hover:border-swap-green/30 transition-all duration-300">
+      <div className="absolute inset-0 bg-gradient-to-b from-swap-green/10 to-transparent rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="relative bg-card/30 backdrop-blur-sm border border-border/20 rounded-3xl p-8 h-full min-h-[180px] flex flex-col items-center justify-center group-hover:border-swap-green/30 transition-all duration-300">
         <motion.div 
-          className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-3 leading-none"
+          className="flex items-baseline justify-center gap-1 mb-4"
           whileHover={{ scale: 1.05 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          <span className="text-gradient-swap">
-            <AnimatedCounter end={value} suffix={suffix} duration={2.5} />
+          <span className="text-4xl sm:text-5xl font-bold text-gradient-swap tabular-nums">
+            <AnimatedCounter end={value} duration={2.5} />
+          </span>
+          <span className="text-2xl sm:text-3xl font-bold text-gradient-swap">
+            {suffix}
           </span>
         </motion.div>
-        <p className="text-muted-foreground text-lg font-medium">{label}</p>
+        <p className="text-muted-foreground text-base font-medium text-center">{label}</p>
       </div>
     </motion.div>
   );
@@ -294,8 +383,14 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      {/* Cursor glow effect */}
+      <CursorGlow />
+      
+      {/* Accumulating particles */}
+      <AccumulatingParticles />
+
       {/* Noise overlay */}
-      <div className="fixed inset-0 pointer-events-none z-50 opacity-[0.02]" style={{
+      <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
       }} />
 
@@ -309,8 +404,6 @@ const Landing = () => {
           <GlowingOrb className="bottom-1/4 -right-1/4" color="blue" size="lg" />
           <GlowingOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" color="green" size="md" />
         </div>
-
-        <ParticleField />
 
         <motion.div 
           style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
@@ -506,7 +599,7 @@ const Landing = () => {
           }}
         />
         
-        <div className="container mx-auto max-w-6xl relative z-10">
+        <div className="container mx-auto max-w-5xl relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -531,11 +624,11 @@ const Landing = () => {
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard value={100} suffix="M+" label="Users by 2030" delay={0} />
             <StatCard value={12} suffix="M+" label="Cleanup actions" delay={0.1} />
             <StatCard value={4} suffix="M+ kg" label="Waste removed" delay={0.2} />
-            <StatCard value={25000} suffix="+" label="Local partners" delay={0.3} />
+            <StatCard value={25} suffix="K+" label="Local partners" delay={0.3} />
           </div>
         </div>
       </section>
