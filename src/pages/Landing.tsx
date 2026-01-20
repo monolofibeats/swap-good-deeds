@@ -7,7 +7,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/landing/LanguageSwitcher";
 import EarthAnimation from "@/components/landing/EarthAnimation";
 import HelpChatbot from "@/components/landing/HelpChatbot";
-
+import FloatingLeaves from "@/components/landing/FloatingLeaves";
+import AnimatedParticles from "@/components/landing/AnimatedParticles";
+import DeepDiveSection from "@/components/landing/DeepDiveSection";
 // Animated counter component with improved animation
 const AnimatedCounter = ({ end, duration = 2, suffix = "" }: { end: number; duration?: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
@@ -90,81 +92,6 @@ const CursorGlow = () => {
         }}
       />
     </motion.div>
-  );
-};
-
-// Accumulating particles - symbolizing small actions adding up
-const AccumulatingParticles = () => {
-  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; opacity: number; delay: number }>>([]);
-  const maxParticles = 200;
-  const { t } = useLanguage();
-
-  useEffect(() => {
-    const initialParticles = Array.from({ length: 30 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      opacity: Math.random() * 0.4 + 0.2,
-      delay: Math.random() * 2,
-    }));
-    setParticles(initialParticles);
-
-    const interval = setInterval(() => {
-      setParticles(prev => {
-        if (prev.length >= maxParticles) return prev;
-        
-        const newParticle = {
-          id: Date.now() + Math.random(),
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-          size: Math.random() * 3 + 1,
-          opacity: Math.random() * 0.5 + 0.2,
-          delay: 0,
-        };
-        
-        return [...prev, newParticle];
-      });
-    }, 800);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-[1]">
-      {particles.map((particle) => (
-        <motion.div
-          key={particle.id}
-          className="absolute rounded-full"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ 
-            opacity: particle.opacity,
-            scale: 1,
-          }}
-          transition={{ 
-            duration: 2,
-            delay: particle.delay,
-            ease: "easeOut",
-          }}
-          style={{
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
-            width: particle.size,
-            height: particle.size,
-            background: `radial-gradient(circle, hsl(145 60% 50% / ${particle.opacity + 0.2}) 0%, hsl(145 60% 45% / ${particle.opacity}) 100%)`,
-            boxShadow: `0 0 ${particle.size * 2}px hsl(145 60% 50% / ${particle.opacity * 0.5})`,
-          }}
-        />
-      ))}
-      <motion.div 
-        className="fixed bottom-6 right-6 text-xs text-muted-foreground/30 font-mono z-50"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 5 }}
-      >
-        {particles.length} {t("particles.counter")}
-      </motion.div>
-    </div>
   );
 };
 
@@ -375,8 +302,11 @@ const Landing = () => {
       {/* Cursor glow effect */}
       <CursorGlow />
       
-      {/* Accumulating particles */}
-      <AccumulatingParticles />
+      {/* Animated particles */}
+      <AnimatedParticles />
+      
+      {/* Floating leaves */}
+      <FloatingLeaves />
 
       {/* Noise overlay */}
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]" style={{
@@ -672,6 +602,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Deep Dive Reading Section */}
+      <DeepDiveSection />
 
       {/* Philosophy Section */}
       <section className="relative py-32 px-6">
