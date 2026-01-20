@@ -15,6 +15,43 @@ interface ContactNotificationRequest {
   message: string;
 }
 
+// HTML escape function to prevent XSS in emails
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Validate and sanitize input
+function validateInput(input: ContactNotificationRequest): void {
+  // Validate message length
+  if (!input.message || input.message.length > 2000) {
+    throw new Error("Message must be between 1 and 2000 characters");
+  }
+  
+  // Validate item title length
+  if (!input.itemTitle || input.itemTitle.length > 500) {
+    throw new Error("Item title must be between 1 and 500 characters");
+  }
+  
+  // Validate item type
+  if (!["quest", "listing"].includes(input.itemType)) {
+    throw new Error("Invalid item type");
+  }
+  
+  // Validate UUIDs format (basic check)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (input.senderUserId && !uuidRegex.test(input.senderUserId)) {
+    throw new Error("Invalid sender user ID format");
+  }
+  if (input.itemId && !uuidRegex.test(input.itemId)) {
+    throw new Error("Invalid item ID format");
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,7 +77,12 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    const { recipientUserId, senderUserId, itemType, itemId, itemTitle, message }: ContactNotificationRequest = await req.json();
+    const requestBody: ContactNotificationRequest = await req.json();
+    
+    // Validate all inputs
+    validateInput(requestBody);
+    
+    const { recipientUserId, senderUserId, itemType, itemId, itemTitle, message } = requestBody;
 
     // Validate UUIDs - skip if empty (like SWAP Team quests)
     if (!recipientUserId || recipientUserId.trim() === "") {
@@ -158,9 +200,16 @@ serve(async (req) => {
       .eq("id", conversationId);
 
     // 3. Send email notification if Resend is configured
+    // SECURITY: All user content is HTML-escaped to prevent XSS/injection attacks
     let emailSent = false;
     if (resendApiKey && recipientEmail) {
       try {
+        // Sanitize all user-controlled content for HTML email
+        const safeDisplayName = escapeHtml(senderProfile?.display_name || "Someone");
+        const safeUsername = escapeHtml(senderProfile?.username || "user");
+        const safeItemTitle = escapeHtml(itemTitle);
+        const safeMessage = escapeHtml(message);
+        
         const emailResponse = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -174,9 +223,9 @@ serve(async (req) => {
             html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #22c55e;">New Message on SWAP</h2>
-                <p><strong>${senderProfile?.display_name || "Someone"}</strong> (@${senderProfile?.username || "user"}) sent you a message about your ${itemLabel.toLowerCase()} "<strong>${itemTitle}</strong>":</p>
+                <p><strong>${safeDisplayName}</strong> (@${safeUsername}) sent you a message about your ${itemLabel.toLowerCase()} "<strong>${safeItemTitle}</strong>":</p>
                 <div style="background: #f4f4f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
-                  <p style="margin: 0; white-space: pre-wrap;">${message}</p>
+                  <p style="margin: 0; white-space: pre-wrap;">${safeMessage}</p>
                 </div>
                 <p>Log in to SWAP to reply!</p>
                 <p style="color: #71717a; font-size: 14px;">– The SWAP Team 🌿</p>
