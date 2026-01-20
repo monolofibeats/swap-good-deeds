@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { LanguageProvider } from "./contexts/LanguageContext.tsx";
 import "./index.css";
 
 // Initialize theme from localStorage or default to dark
@@ -10,4 +11,8 @@ if (savedTheme === 'light') {
   document.documentElement.classList.add('dark');
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <LanguageProvider>
+    <App />
+  </LanguageProvider>
+);
