@@ -44,7 +44,7 @@ const Auth = () => {
 
   // Redirect if already logged in
   if (user) {
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
     navigate(from, { replace: true });
     return null;
   }

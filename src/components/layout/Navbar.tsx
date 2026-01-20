@@ -36,7 +36,7 @@ const xpForLevel = (level: number) => Math.pow(level - 1, 2) * 25;
 const xpForNextLevel = (level: number) => Math.pow(level, 2) * 25;
 
 const navItems = [
-  { label: "Feed", path: "/", icon: Home },
+  { label: "Feed", path: "/home", icon: Home },
   { label: "Create Listing", path: "/create", icon: Plus },
   { label: "Saved", path: "/saved", icon: Star },
   { label: "Messages", path: "/messages", icon: MessageSquare, showBadge: true },
@@ -67,7 +67,7 @@ export const Navbar = () => {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 font-bold text-xl">
+        <Link to="/home" className="flex items-center gap-2 font-bold text-xl">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <Leaf className="h-5 w-5 text-primary-foreground" />
           </div>
