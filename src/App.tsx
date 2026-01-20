@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 
+import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -36,12 +37,18 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public landing page */}
+            <Route path="/" element={<Landing />} />
+            
+            {/* Auth routes */}
             <Route path="/auth" element={<Auth />} />
+            
+            {/* Protected routes */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/supporter-application" element={<ProtectedRoute><SupporterApplication /></ProtectedRoute>} />
             <Route path="/supporter" element={<ProtectedRoute><SupporterDashboard /></ProtectedRoute>} />
             <Route path="/verify-code" element={<ProtectedRoute><VerifyCode /></ProtectedRoute>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/quests/:id" element={<ProtectedRoute><QuestDetail /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
             <Route path="/listing/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />

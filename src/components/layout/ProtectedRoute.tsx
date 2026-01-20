@@ -35,14 +35,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/onboarding" replace />;
   }
 
-  // Redirect approved supporters to supporter dashboard when accessing main index
+  // Redirect approved supporters to supporter dashboard when accessing main home
   const userType = (profile as any)?.user_type;
-  if (userType === "supporter" && location.pathname === "/" && !isAdmin) {
+  if (userType === "supporter" && location.pathname === "/home" && !isAdmin) {
     return <Navigate to="/supporter" replace />;
   }
 
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;
