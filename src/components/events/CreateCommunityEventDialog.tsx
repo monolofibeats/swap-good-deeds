@@ -23,11 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/shared/ImageUpload";
-import { Loader2, Plus, Heart, Target, Calendar } from "lucide-react";
+import { Loader2, Plus, Heart, Target, Calendar, Camera } from "lucide-react";
 
 interface CreateCommunityEventDialogProps {
   onEventCreated?: () => void;
 }
+
+type ContributionMethod = "single_photo" | "multiple_photos" | "numeric" | "both";
 
 export const CreateCommunityEventDialog = ({ onEventCreated }: CreateCommunityEventDialogProps) => {
   const { user } = useAuth();
@@ -47,6 +49,7 @@ export const CreateCommunityEventDialog = ({ onEventCreated }: CreateCommunityEv
   const [hasEndDate, setHasEndDate] = useState(false);
   const [endsAt, setEndsAt] = useState("");
   const [launchImmediately, setLaunchImmediately] = useState(false);
+  const [contributionMethod, setContributionMethod] = useState<ContributionMethod>("multiple_photos");
 
   const resetForm = () => {
     setTitle("");
@@ -60,6 +63,7 @@ export const CreateCommunityEventDialog = ({ onEventCreated }: CreateCommunityEv
     setHasEndDate(false);
     setEndsAt("");
     setLaunchImmediately(false);
+    setContributionMethod("multiple_photos");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,6 +92,7 @@ export const CreateCommunityEventDialog = ({ onEventCreated }: CreateCommunityEv
         starts_at: launchImmediately ? new Date().toISOString() : null,
         ends_at: hasEndDate && endsAt ? new Date(endsAt).toISOString() : null,
         created_by: user!.id,
+        contribution_method: contributionMethod,
       })
       .select()
       .single();
@@ -234,6 +239,32 @@ export const CreateCommunityEventDialog = ({ onEventCreated }: CreateCommunityEv
                 }
                 rows={2}
               />
+            </div>
+          </div>
+
+          {/* Contribution Method */}
+          <div className="space-y-4 p-4 rounded-lg bg-muted/30 border">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Camera className="h-4 w-4 text-primary" />
+              How Can Users Contribute?
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contributionMethod">Contribution Method *</Label>
+              <Select value={contributionMethod} onValueChange={(v) => setContributionMethod(v as ContributionMethod)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="single_photo">Single photo submission</SelectItem>
+                  <SelectItem value="multiple_photos">Before & after photos (multiple)</SelectItem>
+                  <SelectItem value="numeric">Numeric contribution (e.g., report items donated)</SelectItem>
+                  <SelectItem value="both">Both photos and numeric contributions</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                All contributions require admin approval before counting toward the goal.
+              </p>
             </div>
           </div>
 

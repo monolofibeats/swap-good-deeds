@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2, HelpCircle, Heart } from "lucide-react";
+import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2, HelpCircle, Heart, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateEU } from "@/lib/dateUtils";
 import { CreateCommunityEventDialog } from "@/components/events/CreateCommunityEventDialog";
@@ -23,6 +23,8 @@ const Admin = () => {
   const [supporterApps, setSupporterApps] = useState<any[]>([]);
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [eventSubmissions, setEventSubmissions] = useState<any[]>([]);
+  const [eventContributions, setEventContributions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   
@@ -34,6 +36,9 @@ const Admin = () => {
   // Listing reward values
   const [listingPoints, setListingPoints] = useState<Record<string, number>>({});
   const [listingXp, setListingXp] = useState<Record<string, number>>({});
+  
+  // Event contribution values (admin sets how much each contribution counts)
+  const [eventContributionValues, setEventContributionValues] = useState<Record<string, number>>({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -170,12 +175,68 @@ const Admin = () => {
       .select("user_id, display_name, username, avatar_url, level, swap_points, user_type")
       .order("display_name");
 
+    // Fetch pending event submissions
+    const { data: eventSubsData } = await supabase
+      .from("event_submissions")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    const eventSubsWithDetails = await Promise.all(
+      (eventSubsData || []).map(async (sub) => {
+        const [eventRes, profileRes] = await Promise.all([
+          supabase.from("community_events").select("title, goal_unit").eq("id", sub.event_id).single(),
+          supabase.from("profiles").select("display_name").eq("user_id", sub.user_id).single(),
+        ]);
+        return {
+          ...sub,
+          event_title: eventRes.data?.title || "Unknown Event",
+          goal_unit: eventRes.data?.goal_unit || "units",
+          user_display_name: profileRes.data?.display_name || "Unknown User",
+        };
+      })
+    );
+
+    // Fetch pending event contributions
+    const { data: eventContribData } = await supabase
+      .from("event_contributions")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    const eventContribWithDetails = await Promise.all(
+      (eventContribData || []).map(async (contrib) => {
+        const [eventRes, profileRes] = await Promise.all([
+          supabase.from("community_events").select("title, goal_unit").eq("id", contrib.event_id).single(),
+          supabase.from("profiles").select("display_name").eq("user_id", contrib.user_id).single(),
+        ]);
+        return {
+          ...contrib,
+          event_title: eventRes.data?.title || "Unknown Event",
+          goal_unit: eventRes.data?.goal_unit || "units",
+          user_display_name: profileRes.data?.display_name || "Unknown User",
+        };
+      })
+    );
+
+    // Initialize default contribution values
+    const initialContribValues: Record<string, number> = {};
+    eventSubsWithDetails.forEach(sub => {
+      initialContribValues[sub.id] = sub.contribution_value || 1;
+    });
+    eventContribWithDetails.forEach(contrib => {
+      initialContribValues[contrib.id] = contrib.amount || 1;
+    });
+    setEventContributionValues(prev => ({ ...initialContribValues, ...prev }));
+
     setSubmissions(submissionsWithDetails);
     setListings(listingsWithDetails);
     setApplications(applicationsWithDetails);
     setSupporterApps(supporterAppsWithDetails);
     setSupportTickets(ticketsWithDetails);
     setUsers(usersData || []);
+    setEventSubmissions(eventSubsWithDetails);
+    setEventContributions(eventContribWithDetails);
     setLoading(false);
   };
 
@@ -343,6 +404,78 @@ const Admin = () => {
     navigate("/messages");
   };
 
+  const approveEventSubmission = async (sub: any) => {
+    setProcessing(sub.id);
+    const approvedValue = eventContributionValues[sub.id] || sub.contribution_value || 1;
+    
+    await supabase
+      .from("event_submissions")
+      .update({ 
+        status: "approved", 
+        contribution_value: approvedValue,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .eq("id", sub.id);
+    
+    setProcessing(null);
+    toast({ title: `Approved! Added ${approvedValue} ${sub.goal_unit} to event goal.` });
+    fetchData();
+  };
+
+  const rejectEventSubmission = async (id: string) => {
+    setProcessing(id);
+    
+    await supabase
+      .from("event_submissions")
+      .update({ 
+        status: "rejected", 
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .eq("id", id);
+    
+    setProcessing(null);
+    toast({ title: "Submission rejected" });
+    fetchData();
+  };
+
+  const approveEventContribution = async (contrib: any) => {
+    setProcessing(contrib.id);
+    const approvedAmount = eventContributionValues[contrib.id] || contrib.amount;
+    
+    await supabase
+      .from("event_contributions")
+      .update({ 
+        status: "approved", 
+        approved_amount: approvedAmount,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .eq("id", contrib.id);
+    
+    setProcessing(null);
+    toast({ title: `Approved! Added ${approvedAmount} ${contrib.goal_unit} to event goal.` });
+    fetchData();
+  };
+
+  const rejectEventContribution = async (id: string) => {
+    setProcessing(id);
+    
+    await supabase
+      .from("event_contributions")
+      .update({ 
+        status: "rejected", 
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .eq("id", id);
+    
+    setProcessing(null);
+    toast({ title: "Contribution rejected" });
+    fetchData();
+  };
+
   if (loading) return <AppLayout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div></AppLayout>;
 
   return (
@@ -375,7 +508,7 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="events">
               <Heart className="h-3 w-3 mr-1" />
-              Events
+              Events ({eventSubmissions.length + eventContributions.length})
             </TabsTrigger>
             <TabsTrigger value="support">
               Support ({supportTickets.length})
@@ -386,11 +519,176 @@ const Admin = () => {
           </TabsList>
 
           {/* Community Events Tab */}
-          <TabsContent value="events" className="mt-6 space-y-4">
+          <TabsContent value="events" className="mt-6 space-y-6">
             <div className="flex items-center justify-between">
-              <p className="text-muted-foreground">Create and manage community events</p>
+              <p className="text-muted-foreground">Review contributions and manage community events</p>
               <CreateCommunityEventDialog onEventCreated={fetchData} />
             </div>
+
+            {/* Pending Event Submissions (Photos) */}
+            {eventSubmissions.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Camera className="h-5 w-5 text-primary" />
+                  Photo Submissions ({eventSubmissions.length})
+                </h3>
+                {eventSubmissions.map((sub) => (
+                  <Card key={sub.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">{sub.event_title}</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Submitted by {sub.user_display_name} • {formatDateEU(sub.created_at)}
+                          </p>
+                        </div>
+                        <Badge variant="secondary">
+                          Claims: {sub.contribution_value || 1} {sub.goal_unit}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Photos */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">PHOTOS</p>
+                        <div className="flex gap-2 overflow-x-auto">
+                          {(sub.photo_urls && sub.photo_urls.length > 0 ? sub.photo_urls : [sub.photo_url]).map((url: string, i: number) => (
+                            url && (
+                              <img 
+                                key={i} 
+                                src={url} 
+                                className="h-32 w-32 rounded-lg object-cover border border-border flex-shrink-0" 
+                                alt={`Photo ${i + 1}`} 
+                              />
+                            )
+                          ))}
+                        </div>
+                      </div>
+
+                      {sub.description && (
+                        <div className="p-3 rounded-lg bg-muted/30 border">
+                          <p className="text-xs text-muted-foreground mb-1">Description:</p>
+                          <p className="text-sm">{sub.description}</p>
+                        </div>
+                      )}
+
+                      {/* Admin sets contribution value */}
+                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <div className="space-y-2">
+                          <Label htmlFor={`event-contrib-${sub.id}`} className="text-sm font-medium">
+                            Contribution Value ({sub.goal_unit}) *
+                          </Label>
+                          <Input
+                            id={`event-contrib-${sub.id}`}
+                            type="number"
+                            min={0}
+                            value={eventContributionValues[sub.id] || sub.contribution_value || 1}
+                            onChange={(e) => setEventContributionValues({ 
+                              ...eventContributionValues, 
+                              [sub.id]: parseInt(e.target.value) || 0 
+                            })}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            How many {sub.goal_unit} should this count for?
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 pt-2">
+                        <div className="flex-1" />
+                        <Button onClick={() => approveEventSubmission(sub)} disabled={processing === sub.id} className="gap-1">
+                          {processing === sub.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          Approve
+                        </Button>
+                        <Button variant="destructive" onClick={() => rejectEventSubmission(sub.id)} disabled={processing === sub.id} className="gap-1">
+                          <X className="h-4 w-4" />
+                          Reject
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Pending Event Contributions (Numeric) */}
+            {eventContributions.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Numeric Contributions ({eventContributions.length})
+                </h3>
+                {eventContributions.map((contrib) => (
+                  <Card key={contrib.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">{contrib.event_title}</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Submitted by {contrib.user_display_name} • {formatDateEU(contrib.created_at)}
+                          </p>
+                        </div>
+                        <Badge variant="secondary">
+                          Claims: {contrib.amount} {contrib.goal_unit}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {contrib.note && (
+                        <div className="p-3 rounded-lg bg-muted/30 border">
+                          <p className="text-xs text-muted-foreground mb-1">Note:</p>
+                          <p className="text-sm">{contrib.note}</p>
+                        </div>
+                      )}
+
+                      {/* Admin sets approved amount */}
+                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <div className="space-y-2">
+                          <Label htmlFor={`event-contrib-val-${contrib.id}`} className="text-sm font-medium">
+                            Approved Amount ({contrib.goal_unit}) *
+                          </Label>
+                          <Input
+                            id={`event-contrib-val-${contrib.id}`}
+                            type="number"
+                            min={0}
+                            value={eventContributionValues[contrib.id] || contrib.amount}
+                            onChange={(e) => setEventContributionValues({ 
+                              ...eventContributionValues, 
+                              [contrib.id]: parseInt(e.target.value) || 0 
+                            })}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            How many {contrib.goal_unit} should this count for?
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 pt-2">
+                        <div className="flex-1" />
+                        <Button onClick={() => approveEventContribution(contrib)} disabled={processing === contrib.id} className="gap-1">
+                          {processing === contrib.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          Approve
+                        </Button>
+                        <Button variant="destructive" onClick={() => rejectEventContribution(contrib.id)} disabled={processing === contrib.id} className="gap-1">
+                          <X className="h-4 w-4" />
+                          Reject
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {eventSubmissions.length === 0 && eventContributions.length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Heart className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p>No pending event contributions</p>
+                  <p className="text-sm">Community event submissions will appear here for review</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Submissions Tab */}
