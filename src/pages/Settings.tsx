@@ -31,7 +31,7 @@ const Settings = () => {
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [togglingRole, setTogglingRole] = useState(false);
+  
   const [requestingSupport, setRequestingSupport] = useState(false);
   const [supporterAppStatus, setSupporterAppStatus] = useState<string | null>(null);
   const [loadingAppStatus, setLoadingAppStatus] = useState(true);
@@ -74,25 +74,9 @@ const Settings = () => {
 
   const isChangemaker = currentUserType === "helper";
   const isSupporter = currentUserType === "supporter";
-  const isBoth = currentUserType === null; // We'll use null to represent "both"
-
-  const setAsChangemaker = async () => {
-    if (!user) return;
-    setTogglingRole(true);
-    
-    const { error } = await supabase
-      .from("profiles")
-      .update({ user_type: "helper" })
-      .eq("user_id", user.id);
-    
-    setTogglingRole(false);
-    if (error) {
-      toast({ title: "Failed to update", description: error.message, variant: "destructive" });
-    } else {
-      await refreshProfile();
-      toast({ title: "Role updated to Changemaker!" });
-    }
-  };
+  
+  // Supporters always have Changemaker access (it's the base role)
+  // Once a supporter, always a supporter - the role is permanent
 
   const requestSupport = async () => {
     if (!user) return;
@@ -459,13 +443,8 @@ const Settings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3">
-              {/* Changemaker Option - Always available */}
-              <div
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  isChangemaker ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                }`}
-                onClick={() => !togglingRole && setAsChangemaker()}
-              >
+              {/* Changemaker Option - Base role, always active */}
+              <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-swap-green/20 flex items-center justify-center">
@@ -476,13 +455,16 @@ const Settings = () => {
                       <p className="text-sm text-muted-foreground">Complete quests and help with listings</p>
                     </div>
                   </div>
-                  {isChangemaker && <Check className="h-5 w-5 text-primary" />}
+                  <Check className="h-5 w-5 text-primary" />
                 </div>
+                <p className="text-xs text-muted-foreground mt-2 ml-13">
+                  This is your base role — all users are changemakers.
+                </p>
               </div>
 
-              {/* Supporter Option - Requires Application */}
+              {/* Supporter Option - Permanent once approved */}
               <div className={`p-4 rounded-lg border-2 transition-all ${
-                isSupporter ? "border-primary bg-primary/5" : "border-border"
+                isSupporter ? "border-swap-sky bg-swap-sky/5" : "border-border"
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -494,10 +476,33 @@ const Settings = () => {
                       <p className="text-sm text-muted-foreground">Provide resources like stays, meals, etc.</p>
                     </div>
                   </div>
-                  {isSupporter && <Check className="h-5 w-5 text-primary" />}
+                  {isSupporter && (
+                    <Badge className="bg-swap-sky/20 text-swap-sky border-swap-sky">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  )}
                 </div>
                 
-                {!isSupporter && (
+                {isSupporter ? (
+                  <div className="mt-3 pt-3 border-t border-swap-sky/20">
+                    <div className="flex items-center gap-2 text-sm text-swap-sky">
+                      <Check className="h-4 w-4" />
+                      You're an approved supporter!
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      The supporter role is permanent and cannot be removed. You can access the 
+                      <Button 
+                        variant="link" 
+                        className="h-auto p-0 px-1 text-xs text-swap-sky"
+                        onClick={() => navigate("/supporter")}
+                      >
+                        Supporter Dashboard
+                      </Button>
+                      anytime.
+                    </p>
+                  </div>
+                ) : (
                   <div className="mt-3 pt-3 border-t border-border">
                     {loadingAppStatus ? (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -508,6 +513,20 @@ const Settings = () => {
                       <div className="flex items-center gap-2 text-sm text-swap-gold">
                         <AlertCircle className="h-4 w-4" />
                         Application pending review
+                      </div>
+                    ) : supporterAppStatus === "needs_more_info" ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-swap-gold">
+                          <AlertCircle className="h-4 w-4" />
+                          More information requested
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate("/supporter-application")}
+                        >
+                          Update Application
+                        </Button>
                       </div>
                     ) : supporterAppStatus === "rejected" ? (
                       <div className="space-y-2">
@@ -534,17 +553,12 @@ const Settings = () => {
                       </Button>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">
-                      Becoming a supporter requires admin approval to ensure community safety.
+                      Becoming a supporter requires admin approval. Once approved, this role is permanent.
                     </p>
                   </div>
                 )}
               </div>
             </div>
-            {togglingRole && (
-              <div className="flex justify-center">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-            )}
           </CardContent>
         </Card>
 

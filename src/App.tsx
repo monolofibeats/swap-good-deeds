@@ -46,8 +46,8 @@ const App = () => (
             {/* Protected routes */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/supporter-application" element={<ProtectedRoute><SupporterApplication /></ProtectedRoute>} />
-            <Route path="/supporter" element={<ProtectedRoute><SupporterDashboard /></ProtectedRoute>} />
-            <Route path="/verify-code" element={<ProtectedRoute><VerifyCode /></ProtectedRoute>} />
+            <Route path="/supporter" element={<ProtectedRoute requireSupporter><SupporterDashboard /></ProtectedRoute>} />
+            <Route path="/verify-code" element={<ProtectedRoute requireSupporter><VerifyCode /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/quests/:id" element={<ProtectedRoute><QuestDetail /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
