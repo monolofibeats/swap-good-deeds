@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2, HelpCircle, Heart, Camera } from "lucide-react";
+import { Loader2, Check, X, RefreshCw, MapPin, Image, Sparkles, ExternalLink, MessageSquare, UserCog, Building2, HelpCircle, Heart, Camera, Target, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateEU } from "@/lib/dateUtils";
 import { CreateCommunityEventDialog } from "@/components/events/CreateCommunityEventDialog";
-
+import { EditCommunityEventDialog } from "@/components/events/EditCommunityEventDialog";
+import { Progress } from "@/components/ui/progress";
 const Admin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [eventSubmissions, setEventSubmissions] = useState<any[]>([]);
   const [eventContributions, setEventContributions] = useState<any[]>([]);
+  const [communityEvents, setCommunityEvents] = useState<any[]>([]);
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   
@@ -229,6 +232,12 @@ const Admin = () => {
     });
     setEventContributionValues(prev => ({ ...initialContribValues, ...prev }));
 
+    // Fetch all community events (not just pending)
+    const { data: eventsData } = await supabase
+      .from("community_events")
+      .select("*")
+      .order("created_at", { ascending: false });
+
     setSubmissions(submissionsWithDetails);
     setListings(listingsWithDetails);
     setApplications(applicationsWithDetails);
@@ -237,6 +246,7 @@ const Admin = () => {
     setUsers(usersData || []);
     setEventSubmissions(eventSubsWithDetails);
     setEventContributions(eventContribWithDetails);
+    setCommunityEvents(eventsData || []);
     setLoading(false);
   };
 
@@ -682,12 +692,96 @@ const Admin = () => {
 
             {eventSubmissions.length === 0 && eventContributions.length === 0 && (
               <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <Heart className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p>No pending event contributions</p>
-                  <p className="text-sm">Community event submissions will appear here for review</p>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <Heart className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                  <p>No pending contributions to review</p>
                 </CardContent>
               </Card>
+            )}
+
+            {/* All Community Events */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                All Community Events ({communityEvents.length})
+              </h3>
+              
+              {communityEvents.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    <Heart className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                    <p>No community events yet</p>
+                    <p className="text-sm">Create one to rally the community around a cause!</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {communityEvents.map((evt) => {
+                    const progressPercent = Math.min((evt.goal_current / evt.goal_target) * 100, 100);
+                    return (
+                      <Card key={evt.id} className={evt.status === "cancelled" ? "opacity-60" : ""}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-base truncate">{evt.title}</CardTitle>
+                              <p className="text-sm text-muted-foreground truncate">{evt.cause}</p>
+                            </div>
+                            <Badge 
+                              variant={
+                                evt.status === "active" ? "default" :
+                                evt.status === "completed" ? "secondary" :
+                                evt.status === "cancelled" ? "destructive" : "outline"
+                              }
+                              className="shrink-0"
+                            >
+                              {evt.status}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>{evt.goal_current.toLocaleString()} / {evt.goal_target.toLocaleString()} {evt.goal_unit}</span>
+                              <span className="font-medium">{Math.round(progressPercent)}%</span>
+                            </div>
+                            <Progress value={progressPercent} className="h-2" />
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>Created {formatDateEU(evt.created_at)}</span>
+                            {evt.ends_at && (
+                              <>
+                                <span>•</span>
+                                <span>Ends {formatDateEU(evt.ends_at)}</span>
+                              </>
+                            )}
+                          </div>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => setEditingEvent(evt)}
+                          >
+                            Edit Event
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Edit Dialog */}
+            {editingEvent && (
+              <EditCommunityEventDialog
+                event={editingEvent}
+                open={!!editingEvent}
+                onOpenChange={(open) => !open && setEditingEvent(null)}
+                onEventUpdated={fetchData}
+              />
             )}
           </TabsContent>
 
