@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { QuestCard } from "@/components/quests/QuestCard";
 import { ListingCard } from "@/components/listings/ListingCard";
+import { CommunityEventBanner } from "@/components/events/CommunityEventBanner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -103,6 +104,9 @@ const Index = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Community Event Banner */}
+        <CommunityEventBanner />
+
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
