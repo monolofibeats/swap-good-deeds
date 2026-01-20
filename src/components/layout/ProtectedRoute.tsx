@@ -5,11 +5,13 @@ import { Loader2 } from "lucide-react";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireSupporter?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAdmin = false,
+  requireSupporter = false,
 }) => {
   const { user, profile, isAdmin, loading } = useAuth();
   const location = useLocation();
@@ -35,10 +37,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/onboarding" replace />;
   }
 
-  // Redirect approved supporters to supporter dashboard when accessing main home
   const userType = (profile as any)?.user_type;
-  if (userType === "supporter" && location.pathname === "/home" && !isAdmin) {
+  const isApprovedSupporter = userType === "supporter";
+
+  // Redirect approved supporters to supporter dashboard when accessing main home
+  if (isApprovedSupporter && location.pathname === "/home" && !isAdmin) {
     return <Navigate to="/supporter" replace />;
+  }
+
+  // Require supporter role (admins also have access)
+  if (requireSupporter && !isApprovedSupporter && !isAdmin) {
+    return <Navigate to="/home" replace />;
   }
 
   if (requireAdmin && !isAdmin) {
