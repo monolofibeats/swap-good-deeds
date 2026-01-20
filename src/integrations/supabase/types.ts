@@ -17,6 +17,7 @@ export type Database = {
       community_events: {
         Row: {
           cause: string
+          contribution_method: string
           created_at: string
           created_by: string
           description: string | null
@@ -35,6 +36,7 @@ export type Database = {
         }
         Insert: {
           cause: string
+          contribution_method?: string
           created_at?: string
           created_by: string
           description?: string | null
@@ -53,6 +55,7 @@ export type Database = {
         }
         Update: {
           cause?: string
+          contribution_method?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -147,26 +150,38 @@ export type Database = {
       event_contributions: {
         Row: {
           amount: number
+          approved_amount: number | null
           created_at: string
           event_id: string
           id: string
           note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
           user_id: string
         }
         Insert: {
           amount: number
+          approved_amount?: number | null
           created_at?: string
           event_id: string
           id?: string
           note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           user_id: string
         }
         Update: {
           amount?: number
+          approved_amount?: number | null
           created_at?: string
           event_id?: string
           id?: string
           note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -187,6 +202,7 @@ export type Database = {
           event_id: string
           id: string
           photo_url: string
+          photo_urls: string[] | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["submission_status"]
@@ -199,6 +215,7 @@ export type Database = {
           event_id: string
           id?: string
           photo_url: string
+          photo_urls?: string[] | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
@@ -211,6 +228,7 @@ export type Database = {
           event_id?: string
           id?: string
           photo_url?: string
+          photo_urls?: string[] | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["submission_status"]

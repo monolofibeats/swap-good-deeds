@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MultiImageUpload } from "@/components/shared/MultiImageUpload";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { 
   Loader2, 
@@ -20,9 +21,9 @@ import {
   ArrowLeft, 
   Clock, 
   Camera, 
-  DollarSign,
   Check,
-  Calendar
+  Calendar,
+  Package
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
@@ -42,6 +43,7 @@ interface CommunityEvent {
   starts_at: string | null;
   ends_at: string | null;
   created_at: string;
+  contribution_method: string;
 }
 
 const EventDetail = () => {
@@ -55,13 +57,15 @@ const EventDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
-  // Contribution form
+  // Contribution form (numeric)
   const [contributionAmount, setContributionAmount] = useState<number>(1);
   const [contributionNote, setContributionNote] = useState("");
   
-  // Submission form
-  const [photoUrl, setPhotoUrl] = useState("");
+  // Submission form (photos)
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [singlePhotoUrl, setSinglePhotoUrl] = useState("");
   const [submissionDescription, setSubmissionDescription] = useState("");
+  const [contributionValue, setContributionValue] = useState<number>(1);
 
   useEffect(() => {
     if (id) fetchEvent();
@@ -83,7 +87,7 @@ const EventDetail = () => {
     setLoading(false);
   };
 
-  const handleContribution = async (e: React.FormEvent) => {
+  const handleNumericContribution = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !event) return;
     
@@ -94,6 +98,7 @@ const EventDetail = () => {
       user_id: user.id,
       amount: contributionAmount,
       note: contributionNote || null,
+      status: "pending",
     });
     
     setSubmitting(false);
@@ -102,25 +107,34 @@ const EventDetail = () => {
       toast({ title: "Failed to record contribution", description: error.message, variant: "destructive" });
     } else {
       setSubmitted(true);
-      toast({ title: "Thank you for your contribution! 🎉" });
-      fetchEvent(); // Refresh to show updated progress
+      toast({ title: "Contribution submitted for review! 🎉", description: "An admin will review and approve your contribution soon." });
     }
   };
 
-  const handleSubmission = async (e: React.FormEvent) => {
+  const handlePhotoSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !event || !photoUrl) {
-      toast({ title: "Please upload a photo", variant: "destructive" });
+    if (!user || !event) return;
+    
+    const method = event.contribution_method || "multiple_photos";
+    const hasPhotos = method === "single_photo" ? singlePhotoUrl : photoUrls.length > 0;
+    
+    if (!hasPhotos) {
+      toast({ title: "Please upload at least one photo", variant: "destructive" });
       return;
     }
     
     setSubmitting(true);
     
+    const photosToSubmit = method === "single_photo" ? [singlePhotoUrl] : photoUrls;
+    
     const { error } = await supabase.from("event_submissions").insert({
       event_id: event.id,
       user_id: user.id,
-      photo_url: photoUrl,
+      photo_url: photosToSubmit[0], // Keep for backwards compatibility
+      photo_urls: photosToSubmit,
       description: submissionDescription || null,
+      contribution_value: contributionValue,
+      status: "pending",
     });
     
     setSubmitting(false);
@@ -129,7 +143,7 @@ const EventDetail = () => {
       toast({ title: "Failed to submit", description: error.message, variant: "destructive" });
     } else {
       setSubmitted(true);
-      toast({ title: "Submission received! It will count toward the goal once approved." });
+      toast({ title: "Submission received! 🎉", description: "An admin will review and approve your contribution soon." });
     }
   };
 
@@ -154,7 +168,10 @@ const EventDetail = () => {
   }
 
   const progressPercent = Math.min((event.goal_current / event.goal_target) * 100, 100);
-  const isComplete = event.goal_current >= event.goal_target;
+  const contributionMethod = event.contribution_method || "multiple_photos";
+  const showPhotoForm = contributionMethod === "single_photo" || contributionMethod === "multiple_photos" || contributionMethod === "both";
+  const showNumericForm = contributionMethod === "numeric" || contributionMethod === "both";
+  const isMultiplePhotos = contributionMethod === "multiple_photos" || contributionMethod === "both";
 
   return (
     <AppLayout>
@@ -235,6 +252,9 @@ const EventDetail = () => {
                 How to Participate
               </h4>
               <p className="text-sm text-muted-foreground">{event.measurement_description}</p>
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                All contributions are reviewed by admins before counting toward the goal.
+              </p>
             </div>
 
             {event.starts_at && (
@@ -252,73 +272,80 @@ const EventDetail = () => {
             <CardHeader>
               <CardTitle>Make Your Contribution</CardTitle>
               <CardDescription>
-                {event.goal_type === "submissions" 
-                  ? "Submit a photo to show your participation"
-                  : "Record your contribution to the cause"
+                {contributionMethod === "both" 
+                  ? "Submit photos or record a numeric contribution"
+                  : showPhotoForm 
+                    ? `Submit ${isMultiplePhotos ? "before & after photos" : "a photo"} to show your participation`
+                    : "Record your contribution to the cause"
                 }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {event.goal_type === "submissions" ? (
-                <form onSubmit={handleSubmission} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Upload Your Photo *</Label>
-                    <ImageUpload
-                      bucket="submissions"
-                      value={photoUrl}
-                      onChange={setPhotoUrl}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description (optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={submissionDescription}
-                      onChange={(e) => setSubmissionDescription(e.target.value)}
-                      placeholder="Tell us about your contribution..."
-                      rows={2}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full gap-2" disabled={submitting}>
-                    {submitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
+              {contributionMethod === "both" ? (
+                <Tabs defaultValue="photos" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="photos" className="gap-2">
                       <Camera className="h-4 w-4" />
-                    )}
-                    Submit Contribution
-                  </Button>
-                </form>
+                      Photo Submission
+                    </TabsTrigger>
+                    <TabsTrigger value="numeric" className="gap-2">
+                      <Package className="h-4 w-4" />
+                      Numeric Contribution
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="photos">
+                    <PhotoSubmissionForm
+                      isMultiplePhotos={true}
+                      photoUrls={photoUrls}
+                      setPhotoUrls={setPhotoUrls}
+                      singlePhotoUrl={singlePhotoUrl}
+                      setSinglePhotoUrl={setSinglePhotoUrl}
+                      submissionDescription={submissionDescription}
+                      setSubmissionDescription={setSubmissionDescription}
+                      contributionValue={contributionValue}
+                      setContributionValue={setContributionValue}
+                      goalUnit={event.goal_unit}
+                      submitting={submitting}
+                      onSubmit={handlePhotoSubmission}
+                    />
+                  </TabsContent>
+                  <TabsContent value="numeric">
+                    <NumericContributionForm
+                      contributionAmount={contributionAmount}
+                      setContributionAmount={setContributionAmount}
+                      contributionNote={contributionNote}
+                      setContributionNote={setContributionNote}
+                      goalUnit={event.goal_unit}
+                      submitting={submitting}
+                      onSubmit={handleNumericContribution}
+                    />
+                  </TabsContent>
+                </Tabs>
+              ) : showPhotoForm ? (
+                <PhotoSubmissionForm
+                  isMultiplePhotos={isMultiplePhotos}
+                  photoUrls={photoUrls}
+                  setPhotoUrls={setPhotoUrls}
+                  singlePhotoUrl={singlePhotoUrl}
+                  setSinglePhotoUrl={setSinglePhotoUrl}
+                  submissionDescription={submissionDescription}
+                  setSubmissionDescription={setSubmissionDescription}
+                  contributionValue={contributionValue}
+                  setContributionValue={setContributionValue}
+                  goalUnit={event.goal_unit}
+                  submitting={submitting}
+                  onSubmit={handlePhotoSubmission}
+                />
               ) : (
-                <form onSubmit={handleContribution} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Amount ({event.goal_unit}) *</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      min={1}
-                      value={contributionAmount}
-                      onChange={(e) => setContributionAmount(parseInt(e.target.value) || 1)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="note">Note (optional)</Label>
-                    <Textarea
-                      id="note"
-                      value={contributionNote}
-                      onChange={(e) => setContributionNote(e.target.value)}
-                      placeholder="Any additional information..."
-                      rows={2}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full gap-2" disabled={submitting}>
-                    {submitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Heart className="h-4 w-4" />
-                    )}
-                    Record Contribution
-                  </Button>
-                </form>
+                <NumericContributionForm
+                  contributionAmount={contributionAmount}
+                  setContributionAmount={setContributionAmount}
+                  contributionNote={contributionNote}
+                  setContributionNote={setContributionNote}
+                  goalUnit={event.goal_unit}
+                  submitting={submitting}
+                  onSubmit={handleNumericContribution}
+                />
               )}
             </CardContent>
           </Card>
@@ -330,7 +357,7 @@ const EventDetail = () => {
               </div>
               <h3 className="font-semibold text-lg mb-2">Thank You! 🎉</h3>
               <p className="text-muted-foreground">
-                Your contribution has been recorded. Together we can reach our goal!
+                Your contribution has been submitted for review. Once approved, it will count toward our goal!
               </p>
             </CardContent>
           </Card>
@@ -339,5 +366,145 @@ const EventDetail = () => {
     </AppLayout>
   );
 };
+
+// Photo Submission Form Component
+interface PhotoSubmissionFormProps {
+  isMultiplePhotos: boolean;
+  photoUrls: string[];
+  setPhotoUrls: (urls: string[]) => void;
+  singlePhotoUrl: string;
+  setSinglePhotoUrl: (url: string) => void;
+  submissionDescription: string;
+  setSubmissionDescription: (desc: string) => void;
+  contributionValue: number;
+  setContributionValue: (val: number) => void;
+  goalUnit: string;
+  submitting: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+const PhotoSubmissionForm = ({
+  isMultiplePhotos,
+  photoUrls,
+  setPhotoUrls,
+  singlePhotoUrl,
+  setSinglePhotoUrl,
+  submissionDescription,
+  setSubmissionDescription,
+  contributionValue,
+  setContributionValue,
+  goalUnit,
+  submitting,
+  onSubmit,
+}: PhotoSubmissionFormProps) => (
+  <form onSubmit={onSubmit} className="space-y-4">
+    <div className="space-y-2">
+      <Label>{isMultiplePhotos ? "Upload Photos (before & after) *" : "Upload Photo *"}</Label>
+      {isMultiplePhotos ? (
+        <MultiImageUpload
+          bucket="submissions"
+          values={photoUrls}
+          onChange={setPhotoUrls}
+          maxImages={6}
+        />
+      ) : (
+        <ImageUpload
+          bucket="submissions"
+          value={singlePhotoUrl}
+          onChange={setSinglePhotoUrl}
+        />
+      )}
+      {isMultiplePhotos && (
+        <p className="text-xs text-muted-foreground">
+          Upload before and after photos to show your contribution
+        </p>
+      )}
+    </div>
+    <div className="space-y-2">
+      <Label htmlFor="contribution-value">Contribution Amount ({goalUnit}) *</Label>
+      <Input
+        id="contribution-value"
+        type="number"
+        min={1}
+        value={contributionValue}
+        onChange={(e) => setContributionValue(parseInt(e.target.value) || 1)}
+        placeholder="e.g., 5 trees planted"
+      />
+      <p className="text-xs text-muted-foreground">
+        How many {goalUnit} does your contribution represent? Admin will verify this.
+      </p>
+    </div>
+    <div className="space-y-2">
+      <Label htmlFor="description">Description (optional)</Label>
+      <Textarea
+        id="description"
+        value={submissionDescription}
+        onChange={(e) => setSubmissionDescription(e.target.value)}
+        placeholder="Tell us about your contribution..."
+        rows={2}
+      />
+    </div>
+    <Button type="submit" className="w-full gap-2" disabled={submitting}>
+      {submitting ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Camera className="h-4 w-4" />
+      )}
+      Submit for Review
+    </Button>
+  </form>
+);
+
+// Numeric Contribution Form Component
+interface NumericContributionFormProps {
+  contributionAmount: number;
+  setContributionAmount: (amount: number) => void;
+  contributionNote: string;
+  setContributionNote: (note: string) => void;
+  goalUnit: string;
+  submitting: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+const NumericContributionForm = ({
+  contributionAmount,
+  setContributionAmount,
+  contributionNote,
+  setContributionNote,
+  goalUnit,
+  submitting,
+  onSubmit,
+}: NumericContributionFormProps) => (
+  <form onSubmit={onSubmit} className="space-y-4">
+    <div className="space-y-2">
+      <Label htmlFor="amount">Amount ({goalUnit}) *</Label>
+      <Input
+        id="amount"
+        type="number"
+        min={1}
+        value={contributionAmount}
+        onChange={(e) => setContributionAmount(parseInt(e.target.value) || 1)}
+      />
+    </div>
+    <div className="space-y-2">
+      <Label htmlFor="note">Note (optional)</Label>
+      <Textarea
+        id="note"
+        value={contributionNote}
+        onChange={(e) => setContributionNote(e.target.value)}
+        placeholder="Any additional information..."
+        rows={2}
+      />
+    </div>
+    <Button type="submit" className="w-full gap-2" disabled={submitting}>
+      {submitting ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Heart className="h-4 w-4" />
+      )}
+      Submit for Review
+    </Button>
+  </form>
+);
 
 export default EventDetail;
