@@ -13,7 +13,8 @@ export const SocialFeed = () => {
     const { data } = await supabase
       .from("social_posts")
       .select("*")
-      .in("status", ["published", "rewarded"])
+      // Show published, rewarded, AND pending_review (so the poster sees their own post immediately)
+      .in("status", ["published", "rewarded", "pending_review"])
       .order("created_at", { ascending: false })
       .limit(50);
     
