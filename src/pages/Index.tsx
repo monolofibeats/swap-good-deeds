@@ -4,13 +4,13 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { QuestCard } from "@/components/quests/QuestCard";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { CommunityEventBanner } from "@/components/events/CommunityEventBanner";
+import { SocialFeed } from "@/components/posts/SocialFeed";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, Sparkles, X } from "lucide-react";
+import { Search, Loader2, Sparkles, X, ImageIcon } from "lucide-react";
 import { LocationFilter } from "@/components/filters/LocationFilter";
 import { TypeFilter } from "@/components/filters/TypeFilter";
-
 // Haversine formula to calculate distance between two coordinates
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; // Earth's radius in km
@@ -160,8 +160,12 @@ const Index = () => {
         )}
 
         {/* Tabs */}
-        <Tabs defaultValue="quests" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+        <Tabs defaultValue="posts" className="w-full" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
+            <TabsTrigger value="posts" className="gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Posts
+            </TabsTrigger>
             <TabsTrigger value="quests" className="gap-2">
               <Sparkles className="h-4 w-4" />
               Quests ({filteredQuests.length})
@@ -177,6 +181,10 @@ const Index = () => {
             </div>
           ) : (
             <>
+              <TabsContent value="posts" className="mt-6">
+                <SocialFeed />
+              </TabsContent>
+
               <TabsContent value="quests" className="mt-6">
                 {filteredQuests.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">No quests found</div>

@@ -2,108 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SWAP Design System - Dark Anthracite with Nature-Inspired Accents */
+/* SWAP Design System - Green-Only Theme */
 
 @layer base {
   :root {
-    /* Light mode (fallback) */
-    --background: 220 15% 95%;
-    --foreground: 220 20% 10%;
+    /* Light mode - Light greens */
+    --background: 140 20% 97%;
+    --foreground: 145 30% 10%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card: 140 15% 99%;
+    --card-foreground: 145 30% 10%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover: 140 15% 99%;
+    --popover-foreground: 145 30% 10%;
 
-    --primary: 145 65% 35%;
+    --primary: 145 65% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 35 80% 50%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 145 35% 85%;
+    --secondary-foreground: 145 40% 20%;
 
-    --muted: 220 15% 90%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 140 15% 92%;
+    --muted-foreground: 145 15% 40%;
 
-    --accent: 200 70% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 145 45% 80%;
+    --accent-foreground: 145 40% 15%;
 
     --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 85%;
-    --input: 220 15% 85%;
-    --ring: 145 65% 35%;
+    --border: 145 20% 88%;
+    --input: 145 20% 88%;
+    --ring: 145 65% 40%;
 
     --radius: 0.75rem;
 
-    /* SWAP Custom Colors */
-    --swap-green: 145 65% 35%;
-    --swap-green-light: 145 55% 45%;
-    --swap-earth: 35 45% 30%;
-    --swap-earth-light: 35 50% 45%;
-    --swap-sky: 200 70% 45%;
-    --swap-sky-light: 200 60% 55%;
+    /* SWAP Custom Colors - Light Mode */
+    --swap-green: 145 65% 40%;
+    --swap-green-light: 145 55% 50%;
+    --swap-green-dark: 145 70% 25%;
+    --swap-green-muted: 145 40% 70%;
     --swap-gold: 45 85% 50%;
     --swap-gold-light: 45 75% 60%;
 
-    --sidebar-background: 220 15% 97%;
-    --sidebar-foreground: 220 20% 10%;
-    --sidebar-primary: 145 65% 35%;
+    --sidebar-background: 140 15% 98%;
+    --sidebar-foreground: 145 30% 10%;
+    --sidebar-primary: 145 65% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 92%;
-    --sidebar-accent-foreground: 220 20% 10%;
-    --sidebar-border: 220 15% 88%;
-    --sidebar-ring: 145 65% 35%;
+    --sidebar-accent: 145 25% 92%;
+    --sidebar-accent-foreground: 145 30% 10%;
+    --sidebar-border: 145 20% 90%;
+    --sidebar-ring: 145 65% 40%;
   }
 
   .dark {
-    /* Dark mode - Main theme for SWAP */
-    --background: 220 20% 8%;
-    --foreground: 220 15% 92%;
+    /* Dark mode - Deep forest greens */
+    --background: 150 25% 6%;
+    --foreground: 145 20% 92%;
 
-    --card: 220 18% 12%;
-    --card-foreground: 220 15% 92%;
+    --card: 150 22% 10%;
+    --card-foreground: 145 20% 92%;
 
-    --popover: 220 18% 12%;
-    --popover-foreground: 220 15% 92%;
+    --popover: 150 22% 10%;
+    --popover-foreground: 145 20% 92%;
 
     --primary: 145 60% 45%;
-    --primary-foreground: 220 20% 8%;
+    --primary-foreground: 150 25% 6%;
 
-    --secondary: 35 75% 55%;
-    --secondary-foreground: 220 20% 8%;
+    --secondary: 150 30% 18%;
+    --secondary-foreground: 145 25% 85%;
 
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 150 20% 15%;
+    --muted-foreground: 145 15% 55%;
 
-    --accent: 200 65% 50%;
-    --accent-foreground: 220 20% 8%;
+    --accent: 150 25% 20%;
+    --accent-foreground: 145 25% 90%;
 
     --destructive: 0 60% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 18%;
+    --border: 150 20% 18%;
+    --input: 150 20% 15%;
     --ring: 145 60% 45%;
 
     /* SWAP Custom Colors - Dark Mode */
     --swap-green: 145 60% 45%;
     --swap-green-light: 145 50% 55%;
-    --swap-earth: 35 55% 40%;
-    --swap-earth-light: 35 45% 50%;
-    --swap-sky: 200 65% 50%;
-    --swap-sky-light: 200 55% 60%;
+    --swap-green-dark: 145 65% 30%;
+    --swap-green-muted: 145 35% 30%;
     --swap-gold: 45 80% 55%;
     --swap-gold-light: 45 70% 65%;
 
-    --sidebar-background: 220 18% 10%;
-    --sidebar-foreground: 220 15% 92%;
+    --sidebar-background: 150 22% 8%;
+    --sidebar-foreground: 145 20% 92%;
     --sidebar-primary: 145 60% 45%;
-    --sidebar-primary-foreground: 220 20% 8%;
-    --sidebar-accent: 220 15% 15%;
-    --sidebar-accent-foreground: 220 15% 92%;
-    --sidebar-border: 220 15% 18%;
+    --sidebar-primary-foreground: 150 25% 6%;
+    --sidebar-accent: 150 20% 14%;
+    --sidebar-accent-foreground: 145 20% 92%;
+    --sidebar-border: 150 20% 16%;
     --sidebar-ring: 145 60% 45%;
   }
 }
@@ -120,29 +116,29 @@
 }
 
 @layer utilities {
-  /* Custom gradient utilities */
+  /* Custom gradient utilities - Green only */
   .gradient-swap {
     background: linear-gradient(
       135deg,
       hsl(var(--swap-green)) 0%,
-      hsl(var(--swap-sky)) 100%
+      hsl(var(--swap-green-light)) 100%
     );
   }
 
   .gradient-earth {
     background: linear-gradient(
       135deg,
-      hsl(var(--swap-earth)) 0%,
-      hsl(var(--swap-gold)) 100%
+      hsl(var(--swap-green-dark)) 0%,
+      hsl(var(--swap-green)) 100%
     );
   }
 
   .gradient-nature {
     background: linear-gradient(
       135deg,
-      hsl(var(--swap-green)) 0%,
-      hsl(var(--swap-earth-light)) 50%,
-      hsl(var(--swap-gold)) 100%
+      hsl(var(--swap-green-dark)) 0%,
+      hsl(var(--swap-green)) 50%,
+      hsl(var(--swap-green-light)) 100%
     );
   }
 
@@ -151,7 +147,7 @@
     background: linear-gradient(
       135deg,
       hsl(var(--swap-green)) 0%,
-      hsl(var(--swap-sky)) 100%
+      hsl(var(--swap-green-light)) 100%
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

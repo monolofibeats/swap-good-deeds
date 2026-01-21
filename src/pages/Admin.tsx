@@ -27,6 +27,7 @@ const Admin = () => {
   const [eventSubmissions, setEventSubmissions] = useState<any[]>([]);
   const [eventContributions, setEventContributions] = useState<any[]>([]);
   const [communityEvents, setCommunityEvents] = useState<any[]>([]);
+  const [socialPosts, setSocialPosts] = useState<any[]>([]);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -42,6 +43,10 @@ const Admin = () => {
   
   // Event contribution values (admin sets how much each contribution counts)
   const [eventContributionValues, setEventContributionValues] = useState<Record<string, number>>({});
+  
+  // Social post reward values
+  const [postPoints, setPostPoints] = useState<Record<string, number>>({});
+  const [postXp, setPostXp] = useState<Record<string, number>>({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -238,6 +243,27 @@ const Admin = () => {
       .select("*")
       .order("created_at", { ascending: false });
 
+    // Fetch social posts pending review
+    const { data: socialPostsData } = await supabase
+      .from("social_posts")
+      .select("*")
+      .eq("status", "pending_review")
+      .order("created_at", { ascending: false });
+
+    const socialPostsWithDetails = await Promise.all(
+      (socialPostsData || []).map(async (post) => {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("user_id", post.user_id)
+          .single();
+        return {
+          ...post,
+          user_display_name: profileData?.display_name || "Unknown User",
+        };
+      })
+    );
+
     setSubmissions(submissionsWithDetails);
     setListings(listingsWithDetails);
     setApplications(applicationsWithDetails);
@@ -247,6 +273,7 @@ const Admin = () => {
     setEventSubmissions(eventSubsWithDetails);
     setEventContributions(eventContribWithDetails);
     setCommunityEvents(eventsData || []);
+    setSocialPosts(socialPostsWithDetails);
     setLoading(false);
   };
 
@@ -503,7 +530,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="submissions">
-          <TabsList className="grid w-full max-w-6xl grid-cols-7">
+          <TabsList className="grid w-full max-w-7xl grid-cols-8">
             <TabsTrigger value="submissions">
               Submissions ({submissions.length})
             </TabsTrigger>
@@ -512,6 +539,9 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="applications">
               Applications ({applications.length})
+            </TabsTrigger>
+            <TabsTrigger value="posts">
+              Posts ({socialPosts.length})
             </TabsTrigger>
             <TabsTrigger value="supporters">
               Supporters ({supporterApps.length})
@@ -527,6 +557,118 @@ const Admin = () => {
               Users ({users.length})
             </TabsTrigger>
           </TabsList>
+
+          {/* Social Posts Tab */}
+          <TabsContent value="posts" className="mt-6 space-y-4">
+            {socialPosts.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Image className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p>No posts pending review</p>
+                </CardContent>
+              </Card>
+            ) : (
+              socialPosts.map((post) => (
+                <Card key={post.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">Post by {post.user_display_name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{formatDateEU(post.created_at)}</p>
+                      </div>
+                      <Badge className="bg-swap-gold/20 text-swap-gold">Wants Rewards</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {post.caption && (
+                      <p className="text-sm">{post.caption}</p>
+                    )}
+                    
+                    {post.media_urls?.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto">
+                        {post.media_urls.map((url: string, i: number) => (
+                          <img key={i} src={url} className="h-32 w-32 rounded-lg object-cover border border-border flex-shrink-0" alt={`Photo ${i + 1}`} />
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium flex items-center gap-1">
+                          <Sparkles className="h-3 w-3 text-primary" />
+                          Points to Award
+                        </Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={postPoints[post.id] || 0}
+                          onChange={(e) => setPostPoints({ ...postPoints, [post.id]: parseInt(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">XP to Award</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={postXp[post.id] || 0}
+                          onChange={(e) => setPostXp({ ...postXp, [post.id]: parseInt(e.target.value) || 0 })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        onClick={async () => {
+                          setProcessing(post.id);
+                          await supabase.rpc("award_social_post_points", {
+                            p_post_id: post.id,
+                            p_points_amount: postPoints[post.id] || 0,
+                            p_xp_amount: postXp[post.id] || 0,
+                          });
+                          setProcessing(null);
+                          toast({ title: `Rewarded ${postPoints[post.id] || 0} points!` });
+                          fetchData();
+                        }} 
+                        disabled={processing === post.id} 
+                        className="gap-1"
+                      >
+                        {processing === post.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                        Approve & Reward
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={async () => {
+                          setProcessing(post.id);
+                          await supabase.from("social_posts").update({ status: "published" }).eq("id", post.id);
+                          setProcessing(null);
+                          toast({ title: "Post published without rewards" });
+                          fetchData();
+                        }}
+                        disabled={processing === post.id}
+                      >
+                        Publish (No Reward)
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={async () => {
+                          setProcessing(post.id);
+                          await supabase.from("social_posts").update({ status: "rejected" }).eq("id", post.id);
+                          setProcessing(null);
+                          toast({ title: "Post rejected" });
+                          fetchData();
+                        }} 
+                        disabled={processing === post.id} 
+                        className="gap-1"
+                      >
+                        <X className="h-4 w-4" />
+                        Reject
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
 
           {/* Community Events Tab */}
           <TabsContent value="events" className="mt-6 space-y-6">

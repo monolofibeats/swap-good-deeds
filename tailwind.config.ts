@@ -62,14 +62,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // SWAP Custom Colors
+        // SWAP Custom Colors - Green focused
         swap: {
           green: "hsl(var(--swap-green))",
           "green-light": "hsl(var(--swap-green-light))",
-          earth: "hsl(var(--swap-earth))",
-          "earth-light": "hsl(var(--swap-earth-light))",
-          sky: "hsl(var(--swap-sky))",
-          "sky-light": "hsl(var(--swap-sky-light))",
+          "green-dark": "hsl(var(--swap-green-dark))",
+          "green-muted": "hsl(var(--swap-green-muted))",
           gold: "hsl(var(--swap-gold))",
           "gold-light": "hsl(var(--swap-gold-light))",
         },

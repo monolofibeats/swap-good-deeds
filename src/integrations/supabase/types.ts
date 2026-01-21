@@ -835,6 +835,54 @@ export type Database = {
         }
         Relationships: []
       }
+      social_posts: {
+        Row: {
+          admin_note: string | null
+          caption: string | null
+          created_at: string
+          id: string
+          media_urls: string[]
+          points_awarded: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          wants_rewards: boolean
+          xp_awarded: number | null
+        }
+        Insert: {
+          admin_note?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          media_urls?: string[]
+          points_awarded?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          wants_rewards?: boolean
+          xp_awarded?: number | null
+        }
+        Update: {
+          admin_note?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          media_urls?: string[]
+          points_awarded?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          wants_rewards?: boolean
+          xp_awarded?: number | null
+        }
+        Relationships: []
+      }
       submissions: {
         Row: {
           admin_note: string | null
@@ -1039,6 +1087,15 @@ export type Database = {
           p_listing_id: string
           p_points_amount: number
           p_user_id: string
+          p_xp_amount: number
+        }
+        Returns: undefined
+      }
+      award_social_post_points: {
+        Args: {
+          p_admin_note?: string
+          p_points_amount: number
+          p_post_id: string
           p_xp_amount: number
         }
         Returns: undefined

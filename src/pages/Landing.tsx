@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring } from "framer-motion";
-import { Leaf, Camera, Gift, MapPin, Store, Users, ArrowRight, Sparkles, Globe, Zap, Heart } from "lucide-react";
+import { Camera, Gift, MapPin, Store, Users, ArrowRight, Sparkles, Globe, Zap, Heart, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/landing/LanguageSwitcher";
@@ -10,6 +10,7 @@ import HelpChatbot from "@/components/landing/HelpChatbot";
 import FloatingLeaves from "@/components/landing/FloatingLeaves";
 import AnimatedParticles from "@/components/landing/AnimatedParticles";
 import DeepDiveSection from "@/components/landing/DeepDiveSection";
+import { SwapLogo } from "@/components/shared/SwapLogo";
 // Animated counter component with improved animation
 const AnimatedCounter = ({ end, duration = 2, suffix = "" }: { end: number; duration?: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
@@ -95,13 +96,8 @@ const CursorGlow = () => {
   );
 };
 
-// Glowing orb decoration
-const GlowingOrb = ({ className, color = "green", size = "lg" }: { className?: string; color?: "green" | "blue" | "gold"; size?: "sm" | "md" | "lg" }) => {
-  const colors = {
-    green: "hsl(145 60% 45%)",
-    blue: "hsl(200 65% 50%)",
-    gold: "hsl(45 80% 55%)",
-  };
+// Glowing orb decoration - green only
+const GlowingOrb = ({ className, size = "lg" }: { className?: string; size?: "sm" | "md" | "lg" }) => {
   const sizes = { sm: 150, md: 300, lg: 500 };
   
   return (
@@ -110,7 +106,7 @@ const GlowingOrb = ({ className, color = "green", size = "lg" }: { className?: s
       style={{
         width: sizes[size],
         height: sizes[size],
-        background: `radial-gradient(circle, ${colors[color]}20 0%, transparent 70%)`,
+        background: `radial-gradient(circle, hsl(145 60% 45% / 0.15) 0%, transparent 70%)`,
       }}
       animate={{
         scale: [1, 1.2, 1],
@@ -316,9 +312,9 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <GlowingOrb className="top-1/4 -left-1/4" color="green" size="lg" />
-          <GlowingOrb className="bottom-1/4 -right-1/4" color="blue" size="lg" />
-          <GlowingOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" color="green" size="md" />
+          <GlowingOrb className="top-1/4 -left-1/4" size="lg" />
+          <GlowingOrb className="bottom-1/4 -right-1/4" size="lg" />
+          <GlowingOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" size="md" />
         </div>
 
         <motion.div 
@@ -450,8 +446,8 @@ const Landing = () => {
 
       {/* How It Works Section */}
       <section id="how-it-works" className="relative py-32 px-6">
-        <GlowingOrb className="-left-40 top-1/2 -translate-y-1/2" color="green" size="md" />
-        <GlowingOrb className="-right-40 top-1/3" color="blue" size="sm" />
+        <GlowingOrb className="-left-40 top-1/2 -translate-y-1/2" size="md" />
+        <GlowingOrb className="-right-40 top-1/3" size="sm" />
         
         <div className="container mx-auto max-w-6xl relative z-10">
           <motion.div
@@ -550,7 +546,7 @@ const Landing = () => {
 
       {/* Use Cases Section */}
       <section className="relative py-32 px-6">
-        <GlowingOrb className="-right-40 top-1/4" color="gold" size="md" />
+        <GlowingOrb className="-right-40 top-1/4" size="md" />
         
         <div className="container mx-auto max-w-6xl relative z-10">
           <motion.div
@@ -653,7 +649,7 @@ const Landing = () => {
       {/* Final CTA Section */}
       <section className="relative py-32 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-swap-green/10 via-transparent to-transparent" />
-        <GlowingOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" color="green" size="lg" />
+        <GlowingOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" size="lg" />
         
         <div className="container mx-auto max-w-4xl text-center relative z-10">
           <motion.div
@@ -709,9 +705,7 @@ const Landing = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-swap-green/20 flex items-center justify-center">
-                <Leaf className="w-5 h-5 text-swap-green" />
-              </div>
+              <SwapLogo size="lg" />
               <div>
                 <span className="font-bold text-xl">SWAP</span>
                 <p className="text-sm text-muted-foreground">A product by Earth Swap</p>
