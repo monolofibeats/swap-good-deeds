@@ -2,87 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SWAP Design System - Green-Only Theme */
+/* SWAP Design System - Neutral with Green Accent */
 
 @layer base {
   :root {
-    /* Light mode - Light greens */
-    --background: 140 20% 97%;
-    --foreground: 145 30% 10%;
+    /* Light mode - Clean white/gray with green accent */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
 
-    --card: 140 15% 99%;
-    --card-foreground: 145 30% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
 
-    --popover: 140 15% 99%;
-    --popover-foreground: 145 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
 
-    --primary: 145 65% 40%;
+    --primary: 145 65% 36%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 145 35% 85%;
-    --secondary-foreground: 145 40% 20%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 20%;
 
-    --muted: 140 15% 92%;
-    --muted-foreground: 145 15% 40%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 145 45% 80%;
-    --accent-foreground: 145 40% 15%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 9%;
 
     --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 145 20% 88%;
-    --input: 145 20% 88%;
-    --ring: 145 65% 40%;
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
+    --ring: 145 65% 36%;
 
     --radius: 0.75rem;
 
-    /* SWAP Custom Colors - Light Mode */
-    --swap-green: 145 65% 40%;
-    --swap-green-light: 145 55% 50%;
+    /* SWAP Custom Colors - Green accent only */
+    --swap-green: 145 65% 36%;
+    --swap-green-light: 145 55% 48%;
     --swap-green-dark: 145 70% 25%;
     --swap-green-muted: 145 40% 70%;
     --swap-gold: 45 85% 50%;
     --swap-gold-light: 45 75% 60%;
 
-    --sidebar-background: 140 15% 98%;
-    --sidebar-foreground: 145 30% 10%;
-    --sidebar-primary: 145 65% 40%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 145 65% 36%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 145 25% 92%;
-    --sidebar-accent-foreground: 145 30% 10%;
-    --sidebar-border: 145 20% 90%;
-    --sidebar-ring: 145 65% 40%;
+    --sidebar-accent: 0 0% 94%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 89%;
+    --sidebar-ring: 145 65% 36%;
   }
 
   .dark {
-    /* Dark mode - Deep forest greens */
-    --background: 150 25% 6%;
-    --foreground: 145 20% 92%;
+    /* Dark mode - Deep anthracite/charcoal with green accent */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
 
-    --card: 150 22% 10%;
-    --card-foreground: 145 20% 92%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 150 22% 10%;
-    --popover-foreground: 145 20% 92%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
 
     --primary: 145 60% 45%;
-    --primary-foreground: 150 25% 6%;
+    --primary-foreground: 0 0% 5%;
 
-    --secondary: 150 30% 18%;
-    --secondary-foreground: 145 25% 85%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 85%;
 
-    --muted: 150 20% 15%;
-    --muted-foreground: 145 15% 55%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 150 25% 20%;
-    --accent-foreground: 145 25% 90%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 60% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 150 20% 18%;
-    --input: 150 20% 15%;
+    --border: 0 0% 18%;
+    --input: 0 0% 15%;
     --ring: 145 60% 45%;
 
     /* SWAP Custom Colors - Dark Mode */
@@ -93,13 +93,13 @@
     --swap-gold: 45 80% 55%;
     --swap-gold-light: 45 70% 65%;
 
-    --sidebar-background: 150 22% 8%;
-    --sidebar-foreground: 145 20% 92%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 145 60% 45%;
-    --sidebar-primary-foreground: 150 25% 6%;
-    --sidebar-accent: 150 20% 14%;
-    --sidebar-accent-foreground: 145 20% 92%;
-    --sidebar-border: 150 20% 16%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 16%;
     --sidebar-ring: 145 60% 45%;
   }
 }

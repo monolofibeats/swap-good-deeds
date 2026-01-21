@@ -584,11 +584,64 @@ const Admin = () => {
                       <p className="text-sm">{post.caption}</p>
                     )}
                     
+                    {/* Public photos from the post */}
                     {post.media_urls?.length > 0 && (
-                      <div className="flex gap-2 overflow-x-auto">
-                        {post.media_urls.map((url: string, i: number) => (
-                          <img key={i} src={url} className="h-32 w-32 rounded-lg object-cover border border-border flex-shrink-0" alt={`Photo ${i + 1}`} />
-                        ))}
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-2 block">Public Post Photos</Label>
+                        <div className="flex gap-2 overflow-x-auto">
+                          {post.media_urls.map((url: string, i: number) => (
+                            <img key={i} src={url} className="h-32 w-32 rounded-lg object-cover border border-border flex-shrink-0" alt={`Photo ${i + 1}`} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Admin-only: Before/After Photos & Location */}
+                    {(post.before_photo_url || post.after_photo_url || post.location_name) && (
+                      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                          <Camera className="h-4 w-4" />
+                          Reward Verification (Admin Only)
+                        </div>
+                        
+                        {/* Before/After Photos */}
+                        {(post.before_photo_url || post.after_photo_url) && (
+                          <div className="grid grid-cols-2 gap-4">
+                            {post.before_photo_url && (
+                              <div>
+                                <Label className="text-xs text-muted-foreground mb-1 block">Before</Label>
+                                <img 
+                                  src={post.before_photo_url} 
+                                  className="w-full h-40 rounded-lg object-cover border border-border" 
+                                  alt="Before" 
+                                />
+                              </div>
+                            )}
+                            {post.after_photo_url && (
+                              <div>
+                                <Label className="text-xs text-muted-foreground mb-1 block">After</Label>
+                                <img 
+                                  src={post.after_photo_url} 
+                                  className="w-full h-40 rounded-lg object-cover border border-border" 
+                                  alt="After" 
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Location */}
+                        {post.location_name && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-medium">{post.location_name}</p>
+                              {post.location_address && (
+                                <p className="text-muted-foreground text-xs">{post.location_address}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
