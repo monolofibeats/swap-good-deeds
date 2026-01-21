@@ -16,34 +16,34 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 9%;
 
-    --primary: 145 65% 36%;
+    --primary: 152 76% 36%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 94%;
-    --secondary-foreground: 0 0% 20%;
+    --secondary: 150 8% 92%;
+    --secondary-foreground: 150 10% 20%;
 
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 150 6% 92%;
+    --muted-foreground: 150 5% 40%;
 
-    --accent: 0 0% 94%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 150 12% 92%;
+    --accent-foreground: 150 10% 9%;
 
-    --destructive: 0 65% 50%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 89%;
-    --input: 0 0% 89%;
-    --ring: 145 65% 36%;
+    --border: 150 8% 86%;
+    --input: 150 8% 86%;
+    --ring: 152 76% 36%;
 
     --radius: 0.75rem;
 
-    /* SWAP Custom Colors - Green accent only */
-    --swap-green: 145 65% 36%;
-    --swap-green-light: 145 55% 48%;
-    --swap-green-dark: 145 70% 25%;
-    --swap-green-muted: 145 40% 70%;
-    --swap-gold: 45 85% 50%;
-    --swap-gold-light: 45 75% 60%;
+    /* SWAP Custom Colors - Vibrant green accent */
+    --swap-green: 152 76% 36%;
+    --swap-green-light: 152 70% 48%;
+    --swap-green-dark: 152 80% 25%;
+    --swap-green-muted: 152 50% 75%;
+    --swap-gold: 45 90% 50%;
+    --swap-gold-light: 45 85% 60%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 9%;
@@ -66,32 +66,32 @@
     --popover: 0 0% 10%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 145 60% 45%;
+    --primary: 152 72% 45%;
     --primary-foreground: 0 0% 5%;
 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 85%;
+    --secondary: 150 8% 15%;
+    --secondary-foreground: 150 5% 85%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 150 6% 15%;
+    --muted-foreground: 150 5% 55%;
 
-    --accent: 0 0% 18%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 150 10% 18%;
+    --accent-foreground: 150 5% 95%;
 
-    --destructive: 0 60% 45%;
+    --destructive: 0 68% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 15%;
-    --ring: 145 60% 45%;
+    --border: 150 6% 20%;
+    --input: 150 6% 15%;
+    --ring: 152 72% 45%;
 
-    /* SWAP Custom Colors - Dark Mode */
-    --swap-green: 145 60% 45%;
-    --swap-green-light: 145 50% 55%;
-    --swap-green-dark: 145 65% 30%;
-    --swap-green-muted: 145 35% 30%;
-    --swap-gold: 45 80% 55%;
-    --swap-gold-light: 45 70% 65%;
+    /* SWAP Custom Colors - Dark Mode Vibrant */
+    --swap-green: 152 72% 45%;
+    --swap-green-light: 152 65% 55%;
+    --swap-green-dark: 152 75% 32%;
+    --swap-green-muted: 152 40% 30%;
+    --swap-gold: 45 88% 55%;
+    --swap-gold-light: 45 80% 65%;
 
     --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 0 0% 95%;
