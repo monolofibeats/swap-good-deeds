@@ -42,11 +42,21 @@ const Auth = () => {
     }
   }, [searchParams]);
 
-  // Redirect if already logged in
+  // Redirect if already logged in - must be in useEffect to avoid render-time navigation
+  useEffect(() => {
+    if (user) {
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location.state]);
+
+  // Show loading while checking auth state or redirecting
   if (user) {
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
-    navigate(from, { replace: true });
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   const handleLogin = async (e: React.FormEvent) => {
