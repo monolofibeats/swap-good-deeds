@@ -11,34 +11,27 @@ interface ImpactGalleryPreviewProps {
 export const ImpactGalleryPreview = ({ images, isHovered }: ImpactGalleryPreviewProps) => {
   return (
     <div className="absolute inset-0 overflow-hidden rounded-3xl">
-      {/* Stacked layer preview - images positioned behind each other */}
+      {/* Stacked colorless layer preview - minimal cards behind */}
       <div className="absolute inset-0 flex items-center justify-center">
-        {images.slice(0, 4).map((img, i) => (
+        {images.slice(0, 4).map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-xl overflow-hidden shadow-lg"
-            initial={{ opacity: 0, scale: 0.8 }}
+            className="absolute rounded-xl border border-border/20"
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ 
-              opacity: isHovered ? 0.6 - (i * 0.12) : 0.15 - (i * 0.03),
-              scale: 1 - (i * 0.05),
-              x: i * 8,
-              y: i * 8,
-              rotate: i * 2,
+              opacity: isHovered ? 0.5 - (i * 0.1) : 0.15 - (i * 0.03),
+              scale: 1 - (i * 0.04),
+              x: i * 6,
+              y: i * 6,
             }}
-            transition={{ duration: 0.3, delay: i * 0.05 }}
+            transition={{ duration: 0.3, delay: i * 0.03 }}
             style={{
-              width: '75%',
-              height: '65%',
+              width: '70%',
+              height: '60%',
               zIndex: 4 - i,
+              background: `linear-gradient(135deg, hsl(var(--muted) / ${0.6 - i * 0.1}) 0%, hsl(var(--muted) / ${0.3 - i * 0.05}) 100%)`,
             }}
-          >
-            <img
-              src={img}
-              alt=""
-              className="w-full h-full object-cover blur-[2px]"
-            />
-            <div className="absolute inset-0 bg-background/40" />
-          </motion.div>
+          />
         ))}
       </div>
       
