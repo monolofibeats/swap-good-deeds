@@ -10,7 +10,11 @@ import HelpChatbot from "@/components/landing/HelpChatbot";
 import FloatingLeaves from "@/components/landing/FloatingLeaves";
 import AnimatedParticles from "@/components/landing/AnimatedParticles";
 import DeepDiveSection from "@/components/landing/DeepDiveSection";
+import DominoAnimation from "@/components/landing/DominoAnimation";
+import ImpactGalleryModal from "@/components/landing/ImpactGalleryModal";
+import GlowingCTAButton from "@/components/landing/GlowingCTAButton";
 import { SwapLogo } from "@/components/shared/SwapLogo";
+
 // Animated counter component with improved animation
 const AnimatedCounter = ({ end, duration = 2, suffix = "" }: { end: number; duration?: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
@@ -67,7 +71,7 @@ const CursorGlow = () => {
         style={{
           width: 400,
           height: 400,
-          background: "radial-gradient(circle, hsl(145 60% 45% / 0.08) 0%, hsl(200 60% 45% / 0.04) 40%, transparent 70%)",
+          background: "radial-gradient(circle, hsl(152 72% 45% / 0.06) 0%, hsl(152 72% 45% / 0.02) 40%, transparent 70%)",
           translateX: "-50%",
           translateY: "-50%",
         }}
@@ -77,7 +81,7 @@ const CursorGlow = () => {
         style={{
           width: 150,
           height: 150,
-          background: "radial-gradient(circle, hsl(145 60% 50% / 0.15) 0%, transparent 70%)",
+          background: "radial-gradient(circle, hsl(152 72% 50% / 0.12) 0%, transparent 70%)",
           translateX: "-50%",
           translateY: "-50%",
         }}
@@ -87,7 +91,7 @@ const CursorGlow = () => {
         style={{
           width: 30,
           height: 30,
-          background: "radial-gradient(circle, hsl(145 60% 55% / 0.3) 0%, transparent 70%)",
+          background: "radial-gradient(circle, hsl(152 72% 55% / 0.25) 0%, transparent 70%)",
           translateX: "-50%",
           translateY: "-50%",
         }}
@@ -96,7 +100,7 @@ const CursorGlow = () => {
   );
 };
 
-// Glowing orb decoration - green only
+// Glowing orb decoration - green only, more subtle
 const GlowingOrb = ({ className, size = "lg" }: { className?: string; size?: "sm" | "md" | "lg" }) => {
   const sizes = { sm: 150, md: 300, lg: 500 };
   
@@ -106,14 +110,14 @@ const GlowingOrb = ({ className, size = "lg" }: { className?: string; size?: "sm
       style={{
         width: sizes[size],
         height: sizes[size],
-        background: `radial-gradient(circle, hsl(145 60% 45% / 0.15) 0%, transparent 70%)`,
+        background: `radial-gradient(circle, hsl(152 72% 45% / 0.08) 0%, transparent 70%)`,
       }}
       animate={{
-        scale: [1, 1.2, 1],
-        opacity: [0.3, 0.6, 0.3],
+        scale: [1, 1.1, 1],
+        opacity: [0.2, 0.4, 0.2],
       }}
       transition={{
-        duration: 8,
+        duration: 10,
         repeat: Infinity,
         ease: "easeInOut",
       }}
@@ -147,16 +151,11 @@ const StepCard = ({
       transition={{ duration: 1, delay, ease: [0.16, 1, 0.3, 1] }}
       className="group relative perspective-1000"
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-swap-green/20 to-transparent rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
-      <motion.div 
-        className="absolute -inset-0.5 bg-gradient-to-r from-swap-green/30 via-swap-sky/20 to-swap-green/30 rounded-3xl opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-500"
-        animate={{ rotate: [0, 360] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-      />
+      <div className="absolute inset-0 bg-gradient-to-b from-swap-green/10 to-transparent rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
       <div className="relative bg-card/60 backdrop-blur-xl border border-border/50 rounded-3xl p-8 h-full transition-all duration-500 group-hover:border-swap-green/40 group-hover:-translate-y-3 group-hover:shadow-2xl group-hover:shadow-swap-green/10">
         <div className="flex items-center gap-4 mb-6">
           <motion.div 
-            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-swap-green/20 to-swap-sky/10 flex items-center justify-center group-hover:from-swap-green/30 group-hover:to-swap-sky/20 transition-all duration-500"
+            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-swap-green/20 to-swap-green/5 flex items-center justify-center group-hover:from-swap-green/30 group-hover:to-swap-green/10 transition-all duration-500"
             whileHover={{ scale: 1.1, rotate: 5 }}
           >
             <Icon className="w-7 h-7 text-swap-green" />
@@ -177,7 +176,7 @@ const StepCard = ({
               transition={{ delay: delay + 0.1 * (i + 1), duration: 0.5 }}
             >
               <motion.div 
-                className="w-2 h-2 rounded-full bg-gradient-to-r from-swap-green to-swap-sky"
+                className="w-2 h-2 rounded-full bg-swap-green"
                 animate={{ scale: [1, 1.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
               />
@@ -208,9 +207,10 @@ const UseCaseCard = ({
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { t } = useLanguage();
   
+  // All accent colors map to green for consistency
   const colors = {
     green: "from-swap-green/20 to-swap-green/5",
-    blue: "from-swap-sky/20 to-swap-sky/5",
+    blue: "from-swap-green/15 to-swap-green/5",
     gold: "from-swap-gold/20 to-swap-gold/5",
   };
 
@@ -243,8 +243,20 @@ const UseCaseCard = ({
   );
 };
 
-// Stats card with glow effect
-const StatCard = ({ value, suffix, labelKey, delay }: { value: number; suffix: string; labelKey: string; delay: number }) => {
+// Stats card with glow effect - now clickable with gallery
+const StatCard = ({ 
+  value, 
+  suffix, 
+  labelKey, 
+  delay,
+  onClick 
+}: { 
+  value: number; 
+  suffix: string; 
+  labelKey: string; 
+  delay: number;
+  onClick?: () => void;
+}) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
   const { t } = useLanguage();
@@ -255,10 +267,11 @@ const StatCard = ({ value, suffix, labelKey, delay }: { value: number; suffix: s
       initial={{ opacity: 0, y: 40, scale: 0.95 }}
       animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
       transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
-      className="relative group"
+      className="relative group cursor-pointer"
+      onClick={onClick}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-swap-green/10 to-transparent rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="relative bg-card/30 backdrop-blur-sm border border-border/20 rounded-3xl p-8 h-full min-h-[180px] flex flex-col items-center justify-center group-hover:border-swap-green/30 transition-all duration-300">
+      <div className="relative bg-card/30 backdrop-blur-sm border border-border/20 rounded-3xl p-8 h-full min-h-[180px] flex flex-col items-center justify-center group-hover:border-swap-green/30 transition-all duration-300 group-hover:-translate-y-1">
         <motion.div 
           className="flex items-baseline justify-center gap-1 mb-4"
           whileHover={{ scale: 1.05 }}
@@ -272,9 +285,40 @@ const StatCard = ({ value, suffix, labelKey, delay }: { value: number; suffix: s
           </span>
         </motion.div>
         <p className="text-muted-foreground text-base font-medium text-center">{t(labelKey)}</p>
+        <p className="text-xs text-muted-foreground/50 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          Click to see gallery
+        </p>
       </div>
     </motion.div>
   );
+};
+
+// Dummy images for gallery (using placeholder)
+const dummyGalleryImages = {
+  users: [
+    "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80",
+    "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80",
+    "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=800&q=80",
+    "https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=800&q=80",
+  ],
+  cleanups: [
+    "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&q=80",
+    "https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800&q=80",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
+    "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=800&q=80",
+  ],
+  waste: [
+    "https://images.unsplash.com/photo-1604187351574-c75ca79f5807?w=800&q=80",
+    "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&q=80",
+    "https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=800&q=80",
+    "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=800&q=80",
+  ],
+  partners: [
+    "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&q=80",
+    "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80",
+    "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+    "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=80",
+  ],
 };
 
 const Landing = () => {
@@ -283,6 +327,17 @@ const Landing = () => {
   const heroScale = useTransform(scrollYProgress, [0, 0.12], [1, 0.9]);
   const heroY = useTransform(scrollYProgress, [0, 0.12], [0, 80]);
   const { t } = useLanguage();
+  
+  // Gallery modal state
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryCategory, setGalleryCategory] = useState("");
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+
+  const openGallery = (category: string, images: string[]) => {
+    setGalleryCategory(category);
+    setGalleryImages(images);
+    setGalleryOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -329,7 +384,7 @@ const Landing = () => {
           >
             <motion.div 
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-swap-green/10 border border-swap-green/20 text-swap-green text-sm font-medium mb-8 backdrop-blur-sm"
-              whileHover={{ scale: 1.05, borderColor: "hsl(145 60% 45% / 0.4)" }}
+              whileHover={{ scale: 1.05, borderColor: "hsl(152 72% 45% / 0.4)" }}
               transition={{ type: "spring", stiffness: 400 }}
             >
               <motion.div
@@ -391,34 +446,17 @@ const Landing = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <Link to="/auth">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  size="lg" 
-                  className="group relative px-10 py-7 text-lg font-semibold bg-swap-green hover:bg-swap-green-light text-background transition-all duration-300 glow-green overflow-hidden"
-                >
-                  <motion.span
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                    initial={{ x: "-100%" }}
-                    whileHover={{ x: "100%" }}
-                    transition={{ duration: 0.6 }}
-                  />
-                  <span className="relative flex items-center gap-2">
-                    {t("hero.cta.join")}
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </Button>
-              </motion.div>
+              <GlowingCTAButton variant="primary">
+                <span className="flex items-center gap-2">
+                  {t("hero.cta.join")}
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </GlowingCTAButton>
             </Link>
             <a href="#how-it-works">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="px-10 py-7 text-lg font-semibold border-border/50 hover:border-swap-green/50 hover:bg-swap-green/5 transition-all duration-300 backdrop-blur-sm"
-                >
-                  {t("hero.cta.how")}
-                </Button>
-              </motion.div>
+              <GlowingCTAButton variant="outline">
+                {t("hero.cta.how")}
+              </GlowingCTAButton>
             </a>
           </motion.div>
         </motion.div>
@@ -436,7 +474,7 @@ const Landing = () => {
             className="w-7 h-12 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-2 backdrop-blur-sm"
           >
             <motion.div 
-              className="w-1.5 h-3 rounded-full bg-gradient-to-b from-swap-green to-swap-sky"
+              className="w-1.5 h-3 rounded-full bg-swap-green"
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
@@ -444,10 +482,11 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* How It Works Section */}
+      {/* How It Works Section - More subtle background */}
       <section id="how-it-works" className="relative py-32 px-6">
-        <GlowingOrb className="-left-40 top-1/2 -translate-y-1/2" size="md" />
-        <GlowingOrb className="-right-40 top-1/3" size="sm" />
+        {/* Very subtle orbs */}
+        <GlowingOrb className="-left-60 top-1/2 -translate-y-1/2 opacity-30" size="sm" />
+        <GlowingOrb className="-right-60 top-1/3 opacity-30" size="sm" />
         
         <div className="container mx-auto max-w-6xl relative z-10">
           <motion.div
@@ -500,13 +539,13 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Impact Section */}
+      {/* Impact Section - with clickable gallery */}
       <section className="relative py-32 px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-swap-green/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-swap-green/3 via-transparent to-transparent" />
         <motion.div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse at center, hsl(145 60% 35% / 0.06) 0%, transparent 60%)",
+            background: "radial-gradient(ellipse at center, hsl(152 72% 35% / 0.03) 0%, transparent 60%)",
           }}
         />
         
@@ -536,17 +575,41 @@ const Landing = () => {
           </motion.div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard value={100} suffix="M+" labelKey="impact.users" delay={0} />
-            <StatCard value={12} suffix="M+" labelKey="impact.cleanups" delay={0.1} />
-            <StatCard value={4} suffix="M+ kg" labelKey="impact.waste" delay={0.2} />
-            <StatCard value={25} suffix="K+" labelKey="impact.partners" delay={0.3} />
+            <StatCard 
+              value={100} 
+              suffix="M+" 
+              labelKey="impact.users" 
+              delay={0} 
+              onClick={() => openGallery("Users", dummyGalleryImages.users)}
+            />
+            <StatCard 
+              value={12} 
+              suffix="M+" 
+              labelKey="impact.cleanups" 
+              delay={0.1}
+              onClick={() => openGallery("Cleanups", dummyGalleryImages.cleanups)}
+            />
+            <StatCard 
+              value={4} 
+              suffix="M+ kg" 
+              labelKey="impact.waste" 
+              delay={0.2}
+              onClick={() => openGallery("Waste Collected", dummyGalleryImages.waste)}
+            />
+            <StatCard 
+              value={25} 
+              suffix="K+" 
+              labelKey="impact.partners" 
+              delay={0.3}
+              onClick={() => openGallery("Partners", dummyGalleryImages.partners)}
+            />
           </div>
         </div>
       </section>
 
       {/* Use Cases Section */}
       <section className="relative py-32 px-6">
-        <GlowingOrb className="-right-40 top-1/4" size="md" />
+        <GlowingOrb className="-right-60 top-1/4 opacity-30" size="sm" />
         
         <div className="container mx-auto max-w-6xl relative z-10">
           <motion.div
@@ -586,7 +649,7 @@ const Landing = () => {
               titleKey="usecases.locals.title"
               descKey="usecases.locals.desc"
               delay={0.15}
-              accentColor="blue"
+              accentColor="green"
             />
             <UseCaseCard
               icon={Store}
@@ -602,9 +665,9 @@ const Landing = () => {
       {/* Deep Dive Reading Section */}
       <DeepDiveSection />
 
-      {/* Philosophy Section */}
+      {/* Philosophy Section with Domino Animation */}
       <section className="relative py-32 px-6">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-swap-green/3 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-swap-green/2 to-transparent" />
         
         <div className="container mx-auto max-w-4xl text-center relative z-10">
           <motion.div
@@ -642,14 +705,25 @@ const Landing = () => {
                 {t("philosophy.line3")}
               </motion.span>
             </motion.p>
+            
+            {/* Domino Animation */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 1.5, duration: 0.8 }}
+              className="mt-12"
+            >
+              <DominoAnimation />
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* Final CTA Section */}
       <section className="relative py-32 px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-swap-green/10 via-transparent to-transparent" />
-        <GlowingOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" size="lg" />
+        <div className="absolute inset-0 bg-gradient-to-t from-swap-green/5 via-transparent to-transparent" />
+        <GlowingOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-40" size="lg" />
         
         <div className="container mx-auto max-w-4xl text-center relative z-10">
           <motion.div
@@ -666,34 +740,17 @@ const Landing = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
               <Link to="/auth">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                  <Button 
-                    size="lg" 
-                    className="group relative px-10 py-7 text-lg font-semibold bg-swap-green hover:bg-swap-green-light text-background transition-all duration-300 glow-green overflow-hidden"
-                  >
-                    <motion.span
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                      initial={{ x: "-100%" }}
-                      whileHover={{ x: "100%" }}
-                      transition={{ duration: 0.6 }}
-                    />
-                    <span className="relative flex items-center gap-2">
-                      {t("cta.join")}
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </Button>
-                </motion.div>
+                <GlowingCTAButton variant="primary">
+                  <span className="flex items-center gap-2">
+                    {t("cta.join")}
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </GlowingCTAButton>
               </Link>
               <Link to="/auth">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    className="px-10 py-7 text-lg font-semibold border-border/50 hover:border-swap-green/50 hover:bg-swap-green/5 transition-all duration-300 backdrop-blur-sm"
-                  >
-                    {t("cta.create")}
-                  </Button>
-                </motion.div>
+                <GlowingCTAButton variant="outline">
+                  {t("cta.create")}
+                </GlowingCTAButton>
               </Link>
             </div>
           </motion.div>
@@ -724,6 +781,14 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+      
+      {/* Impact Gallery Modal */}
+      <ImpactGalleryModal
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        category={galleryCategory}
+        images={galleryImages}
+      />
     </div>
   );
 };
