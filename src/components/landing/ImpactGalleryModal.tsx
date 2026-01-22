@@ -11,16 +11,34 @@ interface ImpactGalleryPreviewProps {
 export const ImpactGalleryPreview = ({ images, isHovered }: ImpactGalleryPreviewProps) => {
   return (
     <div className="absolute inset-0 overflow-hidden rounded-3xl">
-      {/* Blurred background images - always visible but blurred */}
-      <div className="absolute inset-0 grid grid-cols-2 gap-0.5 opacity-20">
+      {/* Stacked layer preview - images positioned behind each other */}
+      <div className="absolute inset-0 flex items-center justify-center">
         {images.slice(0, 4).map((img, i) => (
-          <div key={i} className="relative overflow-hidden">
+          <motion.div
+            key={i}
+            className="absolute rounded-xl overflow-hidden shadow-lg"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: isHovered ? 0.6 - (i * 0.12) : 0.15 - (i * 0.03),
+              scale: 1 - (i * 0.05),
+              x: i * 8,
+              y: i * 8,
+              rotate: i * 2,
+            }}
+            transition={{ duration: 0.3, delay: i * 0.05 }}
+            style={{
+              width: '75%',
+              height: '65%',
+              zIndex: 4 - i,
+            }}
+          >
             <img
               src={img}
               alt=""
-              className="w-full h-full object-cover blur-md scale-110"
+              className="w-full h-full object-cover blur-[2px]"
             />
-          </div>
+            <div className="absolute inset-0 bg-background/40" />
+          </motion.div>
         ))}
       </div>
       
@@ -31,10 +49,10 @@ export const ImpactGalleryPreview = ({ images, isHovered }: ImpactGalleryPreview
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-background/80 backdrop-blur-sm rounded-full border border-border/50"
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-background/90 backdrop-blur-sm rounded-full border border-border/50 shadow-lg z-10"
           >
-            <Images className="w-3 h-3 text-swap-green" />
-            <span className="text-xs text-muted-foreground">{images.length} photos</span>
+            <Images className="w-3.5 h-3.5 text-swap-green" />
+            <span className="text-xs font-medium text-foreground">{images.length} photos</span>
           </motion.div>
         )}
       </AnimatePresence>

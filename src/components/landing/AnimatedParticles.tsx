@@ -92,16 +92,6 @@ const AnimatedParticles = () => {
           }}
         />
       ))}
-      
-      {/* Counter */}
-      <motion.div 
-        className="fixed bottom-6 right-24 text-xs text-muted-foreground/30 font-mono z-50"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 5 }}
-      >
-        {particles.length} {t("particles.counter")}
-      </motion.div>
     </div>
   );
 };
