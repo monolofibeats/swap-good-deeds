@@ -7,39 +7,40 @@ interface GlowingCTAButtonProps {
   variant?: "primary" | "outline";
   className?: string;
   onClick?: () => void;
+  withTransition?: boolean;
 }
 
-const GlowingCTAButton = ({ children, variant = "primary", className = "", onClick }: GlowingCTAButtonProps) => {
+const GlowingCTAButton = ({ children, variant = "primary", className = "", onClick, withTransition = false }: GlowingCTAButtonProps) => {
   if (variant === "primary") {
     return (
       <motion.div 
         className="relative"
-        whileHover={{ scale: 1.05 }} 
+        whileHover={{ scale: 1.03 }} 
         whileTap={{ scale: 0.98 }}
       >
-        {/* Animated glow ring */}
+        {/* Subtle animated glow ring */}
         <motion.div
-          className="absolute -inset-1 rounded-xl bg-gradient-to-r from-swap-green via-swap-green-light to-swap-green opacity-50 blur-md"
+          className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-swap-green/40 via-swap-green-light/50 to-swap-green/40 opacity-30 blur-sm"
           animate={{
-            scale: [1, 1.05, 1],
-            opacity: [0.4, 0.7, 0.4],
+            scale: [1, 1.02, 1],
+            opacity: [0.2, 0.35, 0.2],
           }}
           transition={{
-            duration: 2,
+            duration: 3,
             repeat: Infinity,
             ease: "easeInOut",
           }}
         />
         
-        {/* Pulse ring */}
+        {/* Very subtle pulse ring */}
         <motion.div
-          className="absolute -inset-2 rounded-xl border-2 border-swap-green/30"
+          className="absolute -inset-1 rounded-xl border border-swap-green/20"
           animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.3, 0, 0.3],
+            scale: [1, 1.05, 1],
+            opacity: [0.2, 0, 0.2],
           }}
           transition={{
-            duration: 2,
+            duration: 3,
             repeat: Infinity,
             ease: "easeOut",
           }}
@@ -50,11 +51,11 @@ const GlowingCTAButton = ({ children, variant = "primary", className = "", onCli
           className={`group relative px-10 py-7 text-lg font-semibold bg-swap-green hover:bg-swap-green-light text-background transition-all duration-300 overflow-hidden ${className}`}
           onClick={onClick}
         >
-          {/* Shimmer effect */}
+          {/* Subtle shimmer effect */}
           <motion.span
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent"
             animate={{ x: ["-100%", "100%"] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
           />
           <span className="relative">{children}</span>
         </Button>
@@ -65,17 +66,17 @@ const GlowingCTAButton = ({ children, variant = "primary", className = "", onCli
   return (
     <motion.div 
       className="relative"
-      whileHover={{ scale: 1.05 }} 
+      whileHover={{ scale: 1.03 }} 
       whileTap={{ scale: 0.98 }}
     >
-      {/* Subtle glow for outline */}
+      {/* Very subtle glow for outline */}
       <motion.div
-        className="absolute -inset-0.5 rounded-xl bg-swap-green/20 opacity-0 blur-sm"
+        className="absolute -inset-0.5 rounded-xl bg-swap-green/10 opacity-0 blur-sm"
         animate={{
-          opacity: [0, 0.3, 0],
+          opacity: [0, 0.2, 0],
         }}
         transition={{
-          duration: 3,
+          duration: 4,
           repeat: Infinity,
           ease: "easeInOut",
         }}
@@ -84,7 +85,7 @@ const GlowingCTAButton = ({ children, variant = "primary", className = "", onCli
       <Button 
         variant="outline" 
         size="lg"
-        className={`px-10 py-7 text-lg font-semibold border-border/50 hover:border-swap-green/50 hover:bg-swap-green/5 transition-all duration-300 backdrop-blur-sm ${className}`}
+        className={`px-10 py-7 text-lg font-semibold border-border/50 hover:border-swap-green/40 hover:bg-swap-green/5 transition-all duration-300 backdrop-blur-sm ${className}`}
         onClick={onClick}
       >
         {children}
