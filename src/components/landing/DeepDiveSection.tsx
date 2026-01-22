@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, X, ChevronRight, Leaf, Droplets, TreePine, Recycle, Globe, Wind } from "lucide-react";
+import { BookOpen, X, ChevronRight, Leaf, Droplets, TreePine, Recycle, Globe, Wind, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Article {
@@ -12,6 +13,7 @@ interface Article {
   titleKey: string;
   contentKey: string;
   color: string;
+  readTime: number; // minutes
 }
 
 const articles: Article[] = [
@@ -22,6 +24,7 @@ const articles: Article[] = [
     titleKey: "deepdive.trees.title",
     contentKey: "deepdive.trees.content",
     color: "swap-green",
+    readTime: 3,
   },
   {
     id: "ocean",
@@ -30,6 +33,7 @@ const articles: Article[] = [
     titleKey: "deepdive.ocean.title",
     contentKey: "deepdive.ocean.content",
     color: "swap-sky",
+    readTime: 4,
   },
   {
     id: "circular",
@@ -38,6 +42,7 @@ const articles: Article[] = [
     titleKey: "deepdive.circular.title",
     contentKey: "deepdive.circular.content",
     color: "swap-gold",
+    readTime: 3,
   },
   {
     id: "local",
@@ -46,6 +51,7 @@ const articles: Article[] = [
     titleKey: "deepdive.local.title",
     contentKey: "deepdive.local.content",
     color: "swap-green",
+    readTime: 2,
   },
   {
     id: "climate",
@@ -54,6 +60,7 @@ const articles: Article[] = [
     titleKey: "deepdive.climate.title",
     contentKey: "deepdive.climate.content",
     color: "swap-sky",
+    readTime: 4,
   },
   {
     id: "biodiversity",
@@ -62,12 +69,37 @@ const articles: Article[] = [
     titleKey: "deepdive.biodiversity.title",
     contentKey: "deepdive.biodiversity.content",
     color: "swap-green",
+    readTime: 3,
   },
 ];
 
 const DeepDiveSection = () => {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [readProgress, setReadProgress] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
+
+  // Track reading progress
+  useEffect(() => {
+    if (!selectedArticle) {
+      setReadProgress(0);
+      return;
+    }
+
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLDivElement;
+      const scrollTop = target.scrollTop;
+      const scrollHeight = target.scrollHeight - target.clientHeight;
+      const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+      setReadProgress(Math.min(100, progress));
+    };
+
+    const scrollElement = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', handleScroll);
+      return () => scrollElement.removeEventListener('scroll', handleScroll);
+    }
+  }, [selectedArticle]);
 
   return (
     <>
@@ -127,9 +159,15 @@ const DeepDiveSection = () => {
                       "{t(article.quoteKey)}"
                     </p>
                     
-                    <p className="text-sm text-muted-foreground mt-4 group-hover:text-swap-green transition-colors">
-                      {t("deepdive.readmore")} →
-                    </p>
+                    <div className="flex items-center justify-between mt-4">
+                      <p className="text-sm text-muted-foreground group-hover:text-swap-green transition-colors">
+                        {t("deepdive.readmore")} →
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground/50">
+                        <Clock className="w-3 h-3" />
+                        <span>{article.readTime} min</span>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -149,7 +187,7 @@ const DeepDiveSection = () => {
         </div>
       </section>
 
-      {/* Article Modal */}
+      {/* Article Modal with Reading Progress */}
       <AnimatePresence>
         {selectedArticle && (
           <motion.div
@@ -167,13 +205,28 @@ const DeepDiveSection = () => {
               className="relative bg-card border border-border/50 rounded-3xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Reading Progress Bar */}
+              <div className="absolute top-0 left-0 right-0 z-10">
+                <Progress value={readProgress} className="h-1 rounded-none bg-border/30" />
+              </div>
+
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-border/30 bg-card/50">
+              <div className="flex items-center justify-between p-6 pt-7 border-b border-border/30 bg-card/50">
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl bg-${selectedArticle.color}/10 border border-${selectedArticle.color}/20 flex items-center justify-center`}>
                     <selectedArticle.icon className={`w-6 h-6 text-${selectedArticle.color}`} />
                   </div>
-                  <h3 className="text-2xl font-bold text-foreground">{t(selectedArticle.titleKey)}</h3>
+                  <div>
+                    <h3 className="text-2xl font-bold text-foreground">{t(selectedArticle.titleKey)}</h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{selectedArticle.readTime} min read</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground/50">•</span>
+                      <span className="text-xs text-swap-green">{Math.round(readProgress)}% complete</span>
+                    </div>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -186,7 +239,7 @@ const DeepDiveSection = () => {
               </div>
 
               {/* Content */}
-              <ScrollArea className="h-[calc(85vh-100px)]">
+              <ScrollArea ref={scrollRef} className="h-[calc(85vh-120px)]">
                 <div className="p-8">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -204,6 +257,21 @@ const DeepDiveSection = () => {
                   </motion.div>
                 </div>
               </ScrollArea>
+
+              {/* Completion celebration */}
+              <AnimatePresence>
+                {readProgress >= 95 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-swap-green/20 border border-swap-green/40 rounded-full"
+                  >
+                    <Leaf className="w-4 h-4 text-swap-green" />
+                    <span className="text-sm font-medium text-swap-green">Article complete!</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </motion.div>
         )}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring } from "framer-motion";
 import { Camera, Gift, MapPin, Store, Users, ArrowRight, Sparkles, Globe, Zap, Heart, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,11 @@ import FloatingLeaves from "@/components/landing/FloatingLeaves";
 import AnimatedParticles from "@/components/landing/AnimatedParticles";
 import DeepDiveSection from "@/components/landing/DeepDiveSection";
 import DominoAnimation from "@/components/landing/DominoAnimation";
-import ImpactGalleryModal from "@/components/landing/ImpactGalleryModal";
+import ImpactGalleryModal, { ImpactGalleryPreview } from "@/components/landing/ImpactGalleryModal";
 import GlowingCTAButton from "@/components/landing/GlowingCTAButton";
+import ScrollProgress from "@/components/landing/ScrollProgress";
+import VineConnections from "@/components/landing/VineConnections";
+import PlantGrowthTransition from "@/components/landing/PlantGrowthTransition";
 import { SwapLogo } from "@/components/shared/SwapLogo";
 
 // Animated counter component with improved animation
@@ -189,7 +192,7 @@ const StepCard = ({
   );
 };
 
-// Use case card component
+// Use case card component with vine connection points
 const UseCaseCard = ({ 
   icon: Icon, 
   titleKey, 
@@ -220,7 +223,7 @@ const UseCaseCard = ({
       initial={{ opacity: 0, scale: 0.9, y: 40 }}
       animate={isInView ? { opacity: 1, scale: 1, y: 0 } : {}}
       transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
-      className="group"
+      className="group relative"
     >
       <div className="relative bg-card/40 backdrop-blur-xl border border-border/30 rounded-3xl p-8 h-full overflow-hidden transition-all duration-500 group-hover:border-swap-green/50 group-hover:bg-card/60 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:shadow-swap-green/5">
         <div className={`absolute inset-0 bg-gradient-to-br ${colors[accentColor]} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
@@ -243,22 +246,25 @@ const UseCaseCard = ({
   );
 };
 
-// Stats card with glow effect - now clickable with gallery
+// Stats card with glow effect and gallery preview
 const StatCard = ({ 
   value, 
   suffix, 
   labelKey, 
   delay,
-  onClick 
+  onClick,
+  images
 }: { 
   value: number; 
   suffix: string; 
   labelKey: string; 
   delay: number;
   onClick?: () => void;
+  images: string[];
 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
+  const [isHovered, setIsHovered] = useState(false);
   const { t } = useLanguage();
 
   return (
@@ -269,11 +275,16 @@ const StatCard = ({
       transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
       className="relative group cursor-pointer"
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-swap-green/10 to-transparent rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="relative bg-card/30 backdrop-blur-sm border border-border/20 rounded-3xl p-8 h-full min-h-[180px] flex flex-col items-center justify-center group-hover:border-swap-green/30 transition-all duration-300 group-hover:-translate-y-1">
+      <div className="relative bg-card/30 backdrop-blur-sm border border-border/20 rounded-3xl p-8 h-full min-h-[180px] flex flex-col items-center justify-center group-hover:border-swap-green/30 transition-all duration-300 group-hover:-translate-y-1 overflow-hidden">
+        {/* Blurred gallery preview */}
+        <ImpactGalleryPreview images={images} isHovered={isHovered} />
+        
         <motion.div 
-          className="flex items-baseline justify-center gap-1 mb-4"
+          className="relative z-10 flex items-baseline justify-center gap-1 mb-4"
           whileHover={{ scale: 1.05 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
@@ -284,16 +295,13 @@ const StatCard = ({
             {suffix}
           </span>
         </motion.div>
-        <p className="text-muted-foreground text-base font-medium text-center">{t(labelKey)}</p>
-        <p className="text-xs text-muted-foreground/50 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          Click to see gallery
-        </p>
+        <p className="relative z-10 text-muted-foreground text-base font-medium text-center">{t(labelKey)}</p>
       </div>
     </motion.div>
   );
 };
 
-// Dummy images for gallery (using placeholder)
+// Dummy images for gallery
 const dummyGalleryImages = {
   users: [
     "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80",
@@ -327,11 +335,15 @@ const Landing = () => {
   const heroScale = useTransform(scrollYProgress, [0, 0.12], [1, 0.9]);
   const heroY = useTransform(scrollYProgress, [0, 0.12], [0, 80]);
   const { t } = useLanguage();
+  const navigate = useNavigate();
   
   // Gallery modal state
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryCategory, setGalleryCategory] = useState("");
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  
+  // Plant growth transition state
+  const [showPlantTransition, setShowPlantTransition] = useState(false);
 
   const openGallery = (category: string, images: string[]) => {
     setGalleryCategory(category);
@@ -339,8 +351,28 @@ const Landing = () => {
     setGalleryOpen(true);
   };
 
+  const handleCTAClick = () => {
+    setShowPlantTransition(true);
+  };
+
+  const handleTransitionComplete = () => {
+    setShowPlantTransition(false);
+    navigate("/auth");
+  };
+
+  // Smooth scroll behavior
+  useEffect(() => {
+    document.documentElement.style.scrollBehavior = "smooth";
+    return () => {
+      document.documentElement.style.scrollBehavior = "auto";
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden scroll-smooth">
+      {/* Scroll Progress */}
+      <ScrollProgress />
+      
       {/* Earth Animation Background */}
       <EarthAnimation />
       
@@ -358,6 +390,12 @@ const Landing = () => {
       
       {/* Floating leaves */}
       <FloatingLeaves />
+      
+      {/* Plant Growth Transition */}
+      <PlantGrowthTransition 
+        isActive={showPlantTransition} 
+        onComplete={handleTransitionComplete} 
+      />
 
       {/* Noise overlay */}
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]" style={{
@@ -445,14 +483,12 @@ const Landing = () => {
             transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <Link to="/auth">
-              <GlowingCTAButton variant="primary">
-                <span className="flex items-center gap-2">
-                  {t("hero.cta.join")}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </GlowingCTAButton>
-            </Link>
+            <GlowingCTAButton variant="primary" onClick={handleCTAClick}>
+              <span className="flex items-center gap-2">
+                {t("hero.cta.join")}
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </GlowingCTAButton>
             <a href="#how-it-works">
               <GlowingCTAButton variant="outline">
                 {t("hero.cta.how")}
@@ -581,6 +617,7 @@ const Landing = () => {
               labelKey="impact.users" 
               delay={0} 
               onClick={() => openGallery("Users", dummyGalleryImages.users)}
+              images={dummyGalleryImages.users}
             />
             <StatCard 
               value={12} 
@@ -588,6 +625,7 @@ const Landing = () => {
               labelKey="impact.cleanups" 
               delay={0.1}
               onClick={() => openGallery("Cleanups", dummyGalleryImages.cleanups)}
+              images={dummyGalleryImages.cleanups}
             />
             <StatCard 
               value={4} 
@@ -595,6 +633,7 @@ const Landing = () => {
               labelKey="impact.waste" 
               delay={0.2}
               onClick={() => openGallery("Waste Collected", dummyGalleryImages.waste)}
+              images={dummyGalleryImages.waste}
             />
             <StatCard 
               value={25} 
@@ -602,12 +641,13 @@ const Landing = () => {
               labelKey="impact.partners" 
               delay={0.3}
               onClick={() => openGallery("Partners", dummyGalleryImages.partners)}
+              images={dummyGalleryImages.partners}
             />
           </div>
         </div>
       </section>
 
-      {/* Use Cases Section */}
+      {/* Use Cases Section with Vine Connections */}
       <section className="relative py-32 px-6">
         <GlowingOrb className="-right-60 top-1/4 opacity-30" size="sm" />
         
@@ -636,28 +676,33 @@ const Landing = () => {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <UseCaseCard
-              icon={MapPin}
-              titleKey="usecases.travelers.title"
-              descKey="usecases.travelers.desc"
-              delay={0}
-              accentColor="green"
-            />
-            <UseCaseCard
-              icon={Users}
-              titleKey="usecases.locals.title"
-              descKey="usecases.locals.desc"
-              delay={0.15}
-              accentColor="green"
-            />
-            <UseCaseCard
-              icon={Store}
-              titleKey="usecases.business.title"
-              descKey="usecases.business.desc"
-              delay={0.3}
-              accentColor="gold"
-            />
+          <div className="relative">
+            {/* Vine connections behind cards */}
+            <VineConnections className="hidden lg:block" />
+            
+            <div className="grid md:grid-cols-3 gap-8 relative z-10">
+              <UseCaseCard
+                icon={MapPin}
+                titleKey="usecases.travelers.title"
+                descKey="usecases.travelers.desc"
+                delay={0}
+                accentColor="green"
+              />
+              <UseCaseCard
+                icon={Users}
+                titleKey="usecases.locals.title"
+                descKey="usecases.locals.desc"
+                delay={0.15}
+                accentColor="green"
+              />
+              <UseCaseCard
+                icon={Store}
+                titleKey="usecases.business.title"
+                descKey="usecases.business.desc"
+                delay={0.3}
+                accentColor="gold"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -739,19 +784,15 @@ const Landing = () => {
             </h2>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
-              <Link to="/auth">
-                <GlowingCTAButton variant="primary">
-                  <span className="flex items-center gap-2">
-                    {t("cta.join")}
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </GlowingCTAButton>
-              </Link>
-              <Link to="/auth">
-                <GlowingCTAButton variant="outline">
-                  {t("cta.create")}
-                </GlowingCTAButton>
-              </Link>
+              <GlowingCTAButton variant="primary" onClick={handleCTAClick}>
+                <span className="flex items-center gap-2">
+                  {t("cta.join")}
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </GlowingCTAButton>
+              <GlowingCTAButton variant="outline" onClick={handleCTAClick}>
+                {t("cta.create")}
+              </GlowingCTAButton>
             </div>
           </motion.div>
         </div>

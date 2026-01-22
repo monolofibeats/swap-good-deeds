@@ -1,7 +1,46 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Images } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+interface ImpactGalleryPreviewProps {
+  images: string[];
+  isHovered: boolean;
+}
+
+export const ImpactGalleryPreview = ({ images, isHovered }: ImpactGalleryPreviewProps) => {
+  return (
+    <div className="absolute inset-0 overflow-hidden rounded-3xl">
+      {/* Blurred background images - always visible but blurred */}
+      <div className="absolute inset-0 grid grid-cols-2 gap-0.5 opacity-20">
+        {images.slice(0, 4).map((img, i) => (
+          <div key={i} className="relative overflow-hidden">
+            <img
+              src={img}
+              alt=""
+              className="w-full h-full object-cover blur-md scale-110"
+            />
+          </div>
+        ))}
+      </div>
+      
+      {/* Gallery indicator on hover */}
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-background/80 backdrop-blur-sm rounded-full border border-border/50"
+          >
+            <Images className="w-3 h-3 text-swap-green" />
+            <span className="text-xs text-muted-foreground">{images.length} photos</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 interface ImpactGalleryModalProps {
   isOpen: boolean;
