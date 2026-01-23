@@ -66,6 +66,8 @@ const App = () => (
             <Route path="/buy-points" element={<ProtectedRoute><BuyPoints /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+            <Route path="/link/discord/success" element={<DiscordLinkSuccess />} />
+            <Route path="/link/discord/error" element={<DiscordLinkError />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
