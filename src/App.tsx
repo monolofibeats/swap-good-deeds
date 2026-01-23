@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 
+import DiscordLinkConfirm from "./pages/DiscordLinkConfirm";
 import DiscordLinkSuccess from "./pages/DiscordLinkSuccess";
 import DiscordLinkError from "./pages/DiscordLinkError";
 import Landing from "./pages/Landing";
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
             <Route path="/link/discord/success" element={<DiscordLinkSuccess />} />
             <Route path="/link/discord/error" element={<DiscordLinkError />} />
+            <Route path="/link/discord/confirm" element={<DiscordLinkConfirm />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
