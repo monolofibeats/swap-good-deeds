@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 
+import DiscordLinkSuccess from "./pages/DiscordLinkSuccess";
+import DiscordLinkError from "./pages/DiscordLinkError";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -28,8 +30,6 @@ import SupporterCreateListing from "./pages/SupporterCreateListing";
 import VerifyCode from "./pages/VerifyCode";
 import MyActivity from "./pages/MyActivity";
 import EventDetail from "./pages/EventDetail";
-import DiscordLinkSuccess from "./pages/DiscordLinkSuccess";
-import DiscordLinkError from "./pages/DiscordLinkError";
 
 const queryClient = new QueryClient();
 
