@@ -28,6 +28,8 @@ import SupporterCreateListing from "./pages/SupporterCreateListing";
 import VerifyCode from "./pages/VerifyCode";
 import MyActivity from "./pages/MyActivity";
 import EventDetail from "./pages/EventDetail";
+import DiscordLinkSuccess from "./pages/DiscordLinkSuccess";
+import DiscordLinkError from "./pages/DiscordLinkError";
 
 const queryClient = new QueryClient();
 
