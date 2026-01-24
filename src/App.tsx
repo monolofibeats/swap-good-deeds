@@ -71,7 +71,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
             <Route path="/link/discord/success" element={<DiscordLinkSuccess />} />
             <Route path="/link/discord/error" element={<DiscordLinkError />} />
-            <Route path="/link/discord/confirm" element={<DiscordLinkConfirm />} />
+            <Route path="/link/discord/confirm" element={<ProtectedRoute><DiscordLinkConfirm /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

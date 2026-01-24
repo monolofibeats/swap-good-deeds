@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Camera, User, Trophy, Star, Copy, Check, Share2, Moon, Sun, Heart, Sparkles, MessageSquare, HelpCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
+import { DiscordConnectionCard } from "@/components/settings/DiscordConnectionCard";
 // Level calculation: XP needed = level^2 * 25
 const calculateLevel = (xp: number) => Math.max(1, Math.floor(Math.sqrt(xp / 25)) + 1);
 const xpForLevel = (level: number) => Math.pow(level - 1, 2) * 25;
@@ -67,6 +67,13 @@ const Settings = () => {
   const avatarUrl = (profile as any)?.avatar_url;
   const referralCode = (profile as any)?.referral_code || "LOADING";
   const currentUserType = (profile as any)?.user_type as string | null;
+  
+  // Discord connection data
+  const discordUserId = (profile as any)?.discord_user_id || null;
+  const discordUsername = (profile as any)?.discord_username || null;
+  const discordGlobalName = (profile as any)?.discord_global_name || null;
+  const discordAvatarUrl = (profile as any)?.discord_avatar_url || null;
+  const discordLinkedAt = (profile as any)?.discord_linked_at || null;
   
   const xpInCurrentLevel = currentXp - xpForLevel(currentLevel);
   const xpNeededForNext = xpForNextLevel(currentLevel) - xpForLevel(currentLevel);
@@ -346,6 +353,16 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Discord Connection Card */}
+        <DiscordConnectionCard
+          discordUserId={discordUserId}
+          discordUsername={discordUsername}
+          discordGlobalName={discordGlobalName}
+          discordAvatarUrl={discordAvatarUrl}
+          discordLinkedAt={discordLinkedAt}
+          onDisconnected={refreshProfile}
+        />
 
         {/* XP & Level Card */}
         <Card>
