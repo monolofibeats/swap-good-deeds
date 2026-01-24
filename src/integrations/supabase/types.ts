@@ -632,9 +632,16 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_source: string | null
           avatar_url: string | null
           created_at: string
+          discord_avatar_url: string | null
+          discord_global_name: string | null
+          discord_linked_at: string | null
+          discord_user_id: string | null
+          discord_username: string | null
           display_name: string
+          display_name_source: string | null
           id: string
           level: number
           onboarding_completed: boolean | null
@@ -647,9 +654,16 @@ export type Database = {
           xp: number
         }
         Insert: {
+          avatar_source?: string | null
           avatar_url?: string | null
           created_at?: string
+          discord_avatar_url?: string | null
+          discord_global_name?: string | null
+          discord_linked_at?: string | null
+          discord_user_id?: string | null
+          discord_username?: string | null
           display_name?: string
+          display_name_source?: string | null
           id?: string
           level?: number
           onboarding_completed?: boolean | null
@@ -662,9 +676,16 @@ export type Database = {
           xp?: number
         }
         Update: {
+          avatar_source?: string | null
           avatar_url?: string | null
           created_at?: string
+          discord_avatar_url?: string | null
+          discord_global_name?: string | null
+          discord_linked_at?: string | null
+          discord_user_id?: string | null
+          discord_username?: string | null
           display_name?: string
+          display_name_source?: string | null
           id?: string
           level?: number
           onboarding_completed?: boolean | null
