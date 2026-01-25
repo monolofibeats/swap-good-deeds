@@ -71,9 +71,15 @@ export default async function handler(req, res) {
   try {
     const code = req.query.code;
     const stateB64 = req.query.state || "";
-    const state = stateB64
-      ? JSON.parse(Buffer.from(stateB64, "base64url").toString("utf8"))
-      : { discord_id: null };
+const state = stateB64
+  ? JSON.parse(Buffer.from(stateB64, "base64url").toString("utf8"))
+  : null;
+
+const targetUserId = state?.user_id;
+if (!targetUserId) {
+  return res.writeHead(302, { Location: `${process.env.SITE_URL}/link/discord/error?reason=missing_state_user` }).end();
+}
+
 
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
