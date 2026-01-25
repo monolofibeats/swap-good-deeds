@@ -64,15 +64,14 @@ export default async function handler(req, res) {
 
     // Prevent linking this discord to a different SWAP user
     const conflictRes = await fetch(
-      `${supabaseUrl}/rest/v1/users?discord_user_id=eq.${discord.id}&select=id`,
-      {
-        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
-      }
-    );
-    const conflict = await conflictRes.json();
-    if (conflict?.[0]?.id && String(conflict[0].id) !== String(targetUserId)) {
-      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=discord_already_linked`);
-    }
+  `${supabaseUrl}/rest/v1/users?discord_user_id=eq.${discord.id}&select=auth_user_id`,
+  { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+);
+const conflict = await conflictRes.json();
+if (conflict?.[0]?.auth_user_id && String(conflict[0].auth_user_id) !== String(targetUserId)) {
+  return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=discord_already_linked`);
+}
+
 
     // Update intended user (no auto-create)
     // Update intended user (no auto-create) + VERIFY it actually updated
