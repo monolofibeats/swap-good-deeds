@@ -1,29 +1,41 @@
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
   try {
     const code = req.query.code;
     const stateB64 = req.query.state || "";
 
     if (!code) {
-      return res.writeHead(302, {
-        Location: `${process.env.SITE_URL}/link/discord/error?reason=missing_code`,
-      }).end();
+      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_code`);
     }
 
-    // ---- Decode state (must contain user_id) ----
     const state = stateB64
       ? JSON.parse(Buffer.from(stateB64, "base64url").toString("utf8"))
       : null;
 
     const targetUserId = state?.user_id;
     if (!targetUserId) {
-      return res.writeHead(302, {
-        Location: `${process.env.SITE_URL}/link/discord/error?reason=missing_state_user`,
-      }).end();
+      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_state_user`);
     }
 
-    // ---- Exchange code for token ----
+    // Safety: ensure required envs exist (prevents silent crashes)
+    const required = [
+      "DISCORD_CLIENT_ID",
+      "DISCORD_CLIENT_SECRET",
+      "DISCORD_REDIRECT_URI",
+      "SUPABASE_URL",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "APP_BASE_URL",
+      "SITE_URL",
+      "BOT_API_URL",
+      "SWAP_INTERNAL_SECRET",
+      "DISCORD_ROLE_LINKED_ID",
+    ];
+    for (const k of required) {
+      if (!process.env[k]) {
+        return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_env_${k}`);
+      }
+    }
+
+    // Exchange code for token
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -37,13 +49,11 @@ export default async function handler(req, res) {
     });
 
     const token = await tokenRes.json();
-    if (!token.access_token) {
-      return res.writeHead(302, {
-        Location: `${process.env.SITE_URL}/link/discord/error?reason=token_exchange_failed`,
-      }).end();
+    if (!token?.access_token) {
+      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=token_exchange_failed`);
     }
 
-    // ---- Fetch Discord user ----
+    // Fetch discord user
     const meRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     });
@@ -52,24 +62,19 @@ export default async function handler(req, res) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // ---- Prevent linking same Discord to another SWAP user ----
+    // Prevent linking this discord to a different SWAP user
     const conflictRes = await fetch(
       `${supabaseUrl}/rest/v1/users?discord_user_id=eq.${discord.id}&select=id`,
       {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-        },
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
       }
     );
     const conflict = await conflictRes.json();
     if (conflict?.[0]?.id && String(conflict[0].id) !== String(targetUserId)) {
-      return res.writeHead(302, {
-        Location: `${process.env.SITE_URL}/link/discord/error?reason=discord_already_linked`,
-      }).end();
+      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=discord_already_linked`);
     }
 
-    // ---- Update the INTENDED user (no auto-create) ----
+    // Update intended user (no auto-create)
     await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${targetUserId}`, {
       method: "PATCH",
       headers: {
@@ -88,7 +93,7 @@ export default async function handler(req, res) {
       }),
     });
 
-    // ---- Assign Discord role via bot ----
+    // Assign role via bot
     await fetch(`${process.env.BOT_API_URL}/assign-role`, {
       method: "POST",
       headers: {
@@ -101,7 +106,7 @@ export default async function handler(req, res) {
       }),
     });
 
-    // ---- Redirect to confirm page ----
+    // Redirect to confirm
     const params = new URLSearchParams({
       user_id: String(targetUserId),
       discord_username: discord.username || "",
@@ -111,12 +116,8 @@ export default async function handler(req, res) {
         : "",
     });
 
-    return res.writeHead(302, {
-      Location: `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`,
-    }).end();
+    return res.redirect(302, `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`);
   } catch (e) {
-    return res.writeHead(302, {
-      Location: `${process.env.SITE_URL}/link/discord/error?reason=exception`,
-    }).end();
+    return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=exception`);
   }
 }
