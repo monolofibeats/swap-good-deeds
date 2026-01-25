@@ -68,12 +68,6 @@ const Settings = () => {
   const referralCode = (profile as any)?.referral_code || "LOADING";
   const currentUserType = (profile as any)?.user_type as string | null;
   
-  // Discord connection data
-  const discordUserId = (profile as any)?.discord_user_id || null;
-  const discordUsername = (profile as any)?.discord_username || null;
-  const discordGlobalName = (profile as any)?.discord_global_name || null;
-  const discordAvatarUrl = (profile as any)?.discord_avatar_url || null;
-  const discordLinkedAt = (profile as any)?.discord_linked_at || null;
   
   const xpInCurrentLevel = currentXp - xpForLevel(currentLevel);
   const xpNeededForNext = xpForNextLevel(currentLevel) - xpForLevel(currentLevel);
@@ -215,11 +209,19 @@ const Settings = () => {
     const newIsDark = !isDarkMode;
     setIsDarkMode(newIsDark);
     
+    // Add transition class for smooth theme change
+    document.documentElement.classList.add('theme-transitioning');
+    
     if (newIsDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Remove transition class after animation completes (1.5s)
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+    }, 1500);
     
     // Save preference to localStorage
     localStorage.setItem('swap-theme', newIsDark ? 'dark' : 'light');
@@ -355,14 +357,7 @@ const Settings = () => {
         </Card>
 
         {/* Discord Connection Card */}
-        <DiscordConnectionCard
-          discordUserId={discordUserId}
-          discordUsername={discordUsername}
-          discordGlobalName={discordGlobalName}
-          discordAvatarUrl={discordAvatarUrl}
-          discordLinkedAt={discordLinkedAt}
-          onDisconnected={refreshProfile}
-        />
+        <DiscordConnectionCard />
 
         {/* XP & Level Card */}
         <Card>

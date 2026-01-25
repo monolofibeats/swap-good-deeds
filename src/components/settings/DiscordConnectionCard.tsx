@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,30 +21,19 @@ import {
 import { Loader2, Link2, Link2Off } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { buildDiscordAuthorizeUrl, isDiscordOAuthConfigured } from "@/lib/discordOAuth";
+import { useUserRow, useInvalidateUserRow } from "@/hooks/useUserRow";
+import { disconnectUserDiscord } from "@/lib/userProfile";
 
-interface DiscordConnectionCardProps {
-  discordUserId: string | null;
-  discordUsername: string | null;
-  discordGlobalName: string | null;
-  discordAvatarUrl: string | null;
-  discordLinkedAt: string | null;
-  onDisconnected: () => void;
-}
-
-export function DiscordConnectionCard({
-  discordUserId,
-  discordUsername,
-  discordGlobalName,
-  discordAvatarUrl,
-  discordLinkedAt,
-  onDisconnected,
-}: DiscordConnectionCardProps) {
+export function DiscordConnectionCard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [disconnecting, setDisconnecting] = useState(false);
+  
+  const { data: userRow, isLoading } = useUserRow(user?.id);
+  const invalidateUserRow = useInvalidateUserRow();
 
-  const isConnected = !!discordUserId;
-  const displayName = discordGlobalName || (discordUsername ? `@${discordUsername}` : null);
+  const isConnected = !!userRow?.discord_user_id;
+  const displayName = userRow?.discord_global_name || (userRow?.discord_username ? `@${userRow.discord_username}` : null);
 
   const handleConnect = () => {
     if (!user) return;
@@ -68,21 +58,12 @@ export function DiscordConnectionCard({
     
     setDisconnecting(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          discord_user_id: null,
-          discord_username: null,
-          discord_global_name: null,
-          discord_avatar_url: null,
-          discord_linked_at: null,
-        })
-        .eq('user_id', user.id);
+      const result = await disconnectUserDiscord(supabase, user.id);
 
-      if (error) throw error;
+      if (!result.success) throw new Error(result.error);
 
       toast({ title: "Disconnected" });
-      onDisconnected();
+      invalidateUserRow(user.id);
     } catch (error: any) {
       toast({
         title: "Failed to disconnect",
@@ -93,6 +74,31 @@ export function DiscordConnectionCard({
       setDisconnecting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5 text-[#5865F2]" />
+            Discord
+          </CardTitle>
+          <CardDescription>
+            Connecting Discord enables role sync and perks.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4 p-4 rounded-lg border border-border/60 bg-muted/20">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -110,15 +116,15 @@ export function DiscordConnectionCard({
           <>
             <div className="flex items-center gap-4 p-4 rounded-lg border border-border/60 bg-muted/20">
               <Avatar className="h-12 w-12 border border-border/60">
-                <AvatarImage src={discordAvatarUrl || undefined} alt="Discord avatar" />
+                <AvatarImage src={userRow?.discord_avatar_url || undefined} alt="Discord avatar" />
                 <AvatarFallback className="bg-[#5865F2]/20 text-[#5865F2]">
-                  {discordUsername?.[0]?.toUpperCase() || 'D'}
+                  {userRow?.discord_username?.[0]?.toUpperCase() || 'D'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{displayName}</p>
-                {discordGlobalName && discordUsername && (
-                  <p className="text-sm text-muted-foreground truncate">@{discordUsername}</p>
+                {userRow?.discord_global_name && userRow?.discord_username && (
+                  <p className="text-sm text-muted-foreground truncate">@{userRow.discord_username}</p>
                 )}
               </div>
               <Badge variant="outline" className="border-[#5865F2]/50 text-[#5865F2]">
@@ -126,9 +132,9 @@ export function DiscordConnectionCard({
               </Badge>
             </div>
 
-            {discordLinkedAt && (
+            {userRow?.discord_linked_at && (
               <p className="text-xs text-muted-foreground">
-                Connected on {new Date(discordLinkedAt).toLocaleDateString()}
+                Connected on {new Date(userRow.discord_linked_at).toLocaleDateString()}
               </p>
             )}
 

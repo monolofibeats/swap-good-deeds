@@ -113,6 +113,19 @@
     scroll-behavior: smooth;
   }
 
+  /* Theme transition - smooth fade between light/dark modes */
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: background-color 1.5s ease-in-out,
+                border-color 1.5s ease-in-out,
+                color 1s ease-in-out,
+                fill 1s ease-in-out,
+                stroke 1s ease-in-out,
+                box-shadow 1.5s ease-in-out !important;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;

@@ -2,12 +2,14 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { updateUserDiscordFields } from "@/lib/userProfile";
 
 function safeText(v: string | null) {
   return (v ?? "").trim();
@@ -19,6 +21,7 @@ export default function DiscordLinkConfirm() {
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [confirming, setConfirming] = useState(false);
+  const queryClient = useQueryClient();
 
   const data = useMemo(() => {
     const discordUserId = safeText(params.get("discord_user_id"));
@@ -63,19 +66,21 @@ export default function DiscordLinkConfirm() {
 
     setConfirming(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          discord_user_id: data.discordUserId || null,
-          discord_username: data.discordUsername || null,
-          discord_global_name: data.discordGlobalName || null,
-          discord_avatar_url: data.avatarUrl || null,
-          discord_linked_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
+      // Update the users table (auth_user_id matches user.id)
+      const result = await updateUserDiscordFields(supabase, user.id, {
+        discord_user_id: data.discordUserId || null,
+        discord_username: data.discordUsername || null,
+        discord_global_name: data.discordGlobalName || null,
+        discord_avatar_url: data.avatarUrl || null,
+        discord_linked_at: new Date().toISOString(),
+      });
 
-      if (error) throw error;
+      if (!result.success) throw new Error(result.error);
 
+      // Invalidate the user row cache so Settings page refetches
+      queryClient.invalidateQueries({ queryKey: ['usersRow', user.id] });
+      
+      // Also refresh the profile context if needed
       await refreshProfile();
       
       const qs = data.discordUsername ? `?username=${encodeURIComponent(data.discordUsername)}` : "";
