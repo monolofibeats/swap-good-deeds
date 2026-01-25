@@ -75,23 +75,35 @@ export default async function handler(req, res) {
     }
 
     // Update intended user (no auto-create)
-    await fetch(`${supabaseUrl}/rest/v1/users?auth_user_id=eq.${targetUserId}`, {
-      method: "PATCH",
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        discord_user_id: discord.id,
-        discord_username: discord.username,
-        discord_global_name: discord.global_name || null,
-        discord_avatar_url: discord.avatar
-          ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
-          : null,
-        discord_linked_at: new Date().toISOString(),
-      }),
-    });
+    // Update intended user (no auto-create) + VERIFY it actually updated
+const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?auth_user_id=eq.${targetUserId}`, {
+  method: "PATCH",
+  headers: {
+    apikey: supabaseKey,
+    Authorization: `Bearer ${supabaseKey}`,
+    "Content-Type": "application/json",
+    Prefer: "return=representation",
+  },
+  body: JSON.stringify({
+    discord_user_id: discord.id,
+    discord_username: discord.username,
+    discord_global_name: discord.global_name || null,
+    discord_avatar_url: discord.avatar
+      ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
+      : null,
+    discord_linked_at: new Date().toISOString(),
+  }),
+});
+
+const updatedRows = await updateRes.json();
+if (!updateRes.ok) {
+  return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=supabase_update_failed`);
+}
+if (!updatedRows?.length) {
+  // No row matched -> auth_user_id mapping missing
+  return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=no_matching_user_row`);
+}
+
 
     // Assign role via bot
     await fetch(`${process.env.BOT_API_URL}/assign-role`, {
