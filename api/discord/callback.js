@@ -2,6 +2,19 @@ async function supabaseUpsertUser({ discord }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+  await fetch(`${process.env.BOT_API_URL}/assign-role`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-swap-secret": process.env.SWAP_INTERNAL_SECRET
+  },
+  body: JSON.stringify({
+    discord_user_id: discord.id,
+    role_id: process.env.DISCORD_ROLE_LINKED_ID
+  })
+});
+
+
   // Find existing user by discord_user_id
   const findRes = await fetch(`${url}/rest/v1/users?discord_user_id=eq.${discord.id}&select=*`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
