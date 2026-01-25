@@ -75,7 +75,7 @@ export default async function handler(req, res) {
     }
 
     // Update intended user (no auto-create)
-    await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${targetUserId}`, {
+    await fetch(`${supabaseUrl}/rest/v1/users?auth_user_id=eq.${targetUserId}`, {
       method: "PATCH",
       headers: {
         apikey: supabaseKey,
