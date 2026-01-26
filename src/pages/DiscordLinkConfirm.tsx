@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { profiles.id } from "@/lib/userProfile";
+import { updateUserDiscordFields } from "@/lib/userProfile";
 
 function safeText(v: string | null) {
   return (v ?? "").trim();
