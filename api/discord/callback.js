@@ -64,7 +64,7 @@ export default async function handler(req, res) {
 
     // Prevent linking this discord to a different SWAP user
     const conflictRes = await fetch(
-  `${supabaseUrl}/rest/v1/users?discord_user_id=eq.${discord.id}&select=auth_user_id`,
+  `${supabaseUrl}/rest/v1/profiles?discord_user_id=eq.${discord.id}&select=auth_user_id`,
   { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
 );
 const conflict = await conflictRes.json();
@@ -75,7 +75,7 @@ if (conflict?.[0]?.auth_user_id && String(conflict[0].auth_user_id) !== String(t
 
     // Update intended user (no auto-create)
     // Update intended user (no auto-create) + VERIFY it actually updated
-const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?auth_user_id=eq.${targetUserId}`, {
+const updateRes = await fetch(`${supabaseUrl}/rest/v1/profiles?auth_user_id=eq.${targetUserId}`, {
   method: "PATCH",
   headers: {
     apikey: supabaseKey,
