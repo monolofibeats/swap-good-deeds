@@ -4,19 +4,25 @@ export default async function handler(req, res) {
     const stateB64 = req.query.state || "";
 
     if (!code) {
-      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_code`);
+      return res.redirect(
+        302,
+        `${process.env.SITE_URL}/link/discord/error?reason=missing_code`
+      );
     }
 
     const state = stateB64
       ? JSON.parse(Buffer.from(stateB64, "base64url").toString("utf8"))
       : null;
 
-    const targetUserId = state?.user_id;
+    const targetUserId = state?.user_id; // should be auth.users.id
     if (!targetUserId) {
-      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_state_user`);
+      return res.redirect(
+        302,
+        `${process.env.SITE_URL}/link/discord/error?reason=missing_state_user`
+      );
     }
 
-    // Safety: ensure required envs exist (prevents silent crashes)
+    // Safety: ensure required envs exist
     const required = [
       "DISCORD_CLIENT_ID",
       "DISCORD_CLIENT_SECRET",
@@ -31,7 +37,10 @@ export default async function handler(req, res) {
     ];
     for (const k of required) {
       if (!process.env[k]) {
-        return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_env_${k}`);
+        return res.redirect(
+          302,
+          `${process.env.SITE_URL}/link/discord/error?reason=missing_env_${k}`
+        );
       }
     }
 
@@ -50,10 +59,13 @@ export default async function handler(req, res) {
 
     const token = await tokenRes.json();
     if (!token?.access_token) {
-      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=token_exchange_failed`);
+      return res.redirect(
+        302,
+        `${process.env.SITE_URL}/link/discord/error?reason=token_exchange_failed`
+      );
     }
 
-    // Fetch discord user
+    // Fetch Discord identity
     const meRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     });
@@ -62,49 +74,64 @@ export default async function handler(req, res) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // Prevent linking this discord to a different SWAP user
+    // Prevent linking this Discord to a different SWAP user
+    // (profiles.id is the auth user id)
     const conflictRes = await fetch(
-  `${supabaseUrl}/rest/v1/profiles?discord_user_id=eq.${discord.id}&select=id`,
-  { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
-);
-const conflict = await conflictRes.json();
-if (conflict?.[0]?.id && String(conflict[0].id) !== String(targetUserId)) {
-  return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=discord_already_linked`);
-}
+      `${supabaseUrl}/rest/v1/profiles?discord_user_id=eq.${discord.id}&select=id`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
 
+    const conflict = await conflictRes.json();
+    if (conflict?.[0]?.id && String(conflict[0].id) !== String(targetUserId)) {
+      return res.redirect(
+        302,
+        `${process.env.SITE_URL}/link/discord/error?reason=discord_already_linked`
+      );
+    }
 
+    // Update intended profile row (MATCH ON profiles.id)
+    const updateRes = await fetch(
+      `${supabaseUrl}/rest/v1/profiles?id=eq.${targetUserId}`,
+      {
+        method: "PATCH",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify({
+          discord_user_id: discord.id,
+          discord_username: discord.username,
+          discord_global_name: discord.global_name || null,
+          discord_avatar_url: discord.avatar
+            ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
+            : null,
+          discord_linked_at: new Date().toISOString(),
+        }),
+      }
+    );
 
-    // Update intended user (no auto-create)
-    // Update intended user (no auto-create) + VERIFY it actually updated
-const updateRes = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${targetUserId}`, {
-  method: "PATCH",
-  headers: {
-    apikey: supabaseKey,
-    Authorization: `Bearer ${supabaseKey}`,
-    "Content-Type": "application/json",
-    Prefer: "return=representation",
-  },
-  body: JSON.stringify({
-    discord_user_id: discord.id,
-    discord_username: discord.username,
-    discord_global_name: discord.global_name || null,
-    discord_avatar_url: discord.avatar
-      ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
-      : null,
-    discord_linked_at: new Date().toISOString(),
-  }),
-});
+    const updatedRows = await updateRes.json();
+    if (!updateRes.ok) {
+      return res.redirect(
+        302,
+        `${process.env.SITE_URL}/link/discord/error?reason=supabase_update_failed`
+      );
+    }
+    if (!updatedRows?.length) {
+      return res.redirect(
+        302,
+        `${process.env.SITE_URL}/link/discord/error?reason=no_matching_profile_row`
+      );
+    }
 
-const updatedRows = await updateRes.json();
-if (!updateRes.ok) {
-  return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=supabase_update_failed`);
-}
-if (!updatedRows?.length) {
-  return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=no_matching_profile_row`);
-}
-
-
-    // Assign role via bot
+    // Assign Discord role via bot API
     await fetch(`${process.env.BOT_API_URL}/assign-role`, {
       method: "POST",
       headers: {
@@ -117,20 +144,25 @@ if (!updatedRows?.length) {
       }),
     });
 
-    // Redirect to confirm
+    // Redirect to confirm page (IMPORTANT: include discord_user_id because your Confirm page reads it)
     const params = new URLSearchParams({
-  user_id: String(targetUserId),
-  discord_user_id: discord.id, // IMPORTANT
-  discord_username: discord.username || "",
-  discord_global_name: discord.global_name || "",
-  discord_avatar_url: discord.avatar
-    ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
-    : "",
-});
+      user_id: String(targetUserId),
+      discord_user_id: String(discord.id),
+      discord_username: discord.username || "",
+      discord_global_name: discord.global_name || "",
+      discord_avatar_url: discord.avatar
+        ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
+        : "",
+    });
 
-
-    return res.redirect(302, `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`);
+    return res.redirect(
+      302,
+      `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`
+    );
   } catch (e) {
-    return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=exception`);
+    return res.redirect(
+      302,
+      `${process.env.SITE_URL}/link/discord/error?reason=exception`
+    );
   }
 }
