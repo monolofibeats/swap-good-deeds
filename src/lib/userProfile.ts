@@ -23,7 +23,7 @@ export async function fetchUserRowByAuthId(
   authUserId: string
 ): Promise<UserRow | null> {
   const { data, error } = await supabase
-    .from('users')
+    .from('profiles')
     .select('*')
     .eq('auth_user_id', authUserId)
     .maybeSingle();
@@ -51,7 +51,7 @@ export async function updateUserDiscordFields(
   }
 ): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
-    .from('users')
+    .from('profiles')
     .update(fields)
     .eq('auth_user_id', authUserId);
 
