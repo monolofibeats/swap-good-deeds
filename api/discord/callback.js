@@ -64,18 +64,19 @@ export default async function handler(req, res) {
 
     // Prevent linking this discord to a different SWAP user
     const conflictRes = await fetch(
-  `${supabaseUrl}/rest/v1/profiles?discord_user_id=eq.${discord.id}&select=auth_user_id`,
+  `${supabaseUrl}/rest/v1/profiles?discord_user_id=eq.${discord.id}&select=id`,
   { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
 );
 const conflict = await conflictRes.json();
-if (conflict?.[0]?.auth_user_id && String(conflict[0].auth_user_id) !== String(targetUserId)) {
+if (conflict?.[0]?.id && String(conflict[0].id) !== String(targetUserId)) {
   return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=discord_already_linked`);
 }
 
 
+
     // Update intended user (no auto-create)
     // Update intended user (no auto-create) + VERIFY it actually updated
-const updateRes = await fetch(`${supabaseUrl}/rest/v1/profiles?auth_user_id=eq.${targetUserId}`, {
+const updateRes = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${targetUserId}`, {
   method: "PATCH",
   headers: {
     apikey: supabaseKey,
@@ -99,8 +100,7 @@ if (!updateRes.ok) {
   return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=supabase_update_failed`);
 }
 if (!updatedRows?.length) {
-  // No row matched -> auth_user_id mapping missing
-  return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=no_matching_user_row`);
+  return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=no_matching_profile_row`);
 }
 
 
@@ -119,13 +119,15 @@ if (!updatedRows?.length) {
 
     // Redirect to confirm
     const params = new URLSearchParams({
-      user_id: String(targetUserId),
-      discord_username: discord.username || "",
-      discord_global_name: discord.global_name || "",
-      discord_avatar_url: discord.avatar
-        ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
-        : "",
-    });
+  user_id: String(targetUserId),
+  discord_user_id: discord.id, // IMPORTANT
+  discord_username: discord.username || "",
+  discord_global_name: discord.global_name || "",
+  discord_avatar_url: discord.avatar
+    ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
+    : "",
+});
+
 
     return res.redirect(302, `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`);
   } catch (e) {
