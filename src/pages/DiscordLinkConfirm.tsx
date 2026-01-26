@@ -66,14 +66,6 @@ export default function DiscordLinkConfirm() {
 
     setConfirming(true);
     try {
-      // Update the users table (auth_user_id matches user.id)
-      const result = await updateUserDiscordFields(supabase, user.id, {
-        discord_user_id: data.discordUserId || null,
-        discord_username: data.discordUsername || null,
-        discord_global_name: data.discordGlobalName || null,
-        discord_avatar_url: data.avatarUrl || null,
-        discord_linked_at: new Date().toISOString(),
-      });
 
       if (!result.success) throw new Error(result.error);
 
