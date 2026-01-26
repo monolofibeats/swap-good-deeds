@@ -30,13 +30,13 @@ export default function DiscordLinkConfirm() {
     const avatarUrl = safeText(params.get("discord_avatar_url"));
     const userId = safeText(params.get("user_id"));
 
-    const displayName = discordGlobalName || (discordUsername ? `@${discordUsername}` : "Discord account");
+    const displayName =
+      discordGlobalName || (discordUsername ? `@${discordUsername}` : "Discord account");
     const secondary = discordGlobalName && discordUsername ? `@${discordUsername}` : "";
 
     return { discordUserId, discordUsername, discordGlobalName, avatarUrl, userId, displayName, secondary };
   }, [params]);
 
-  // Check for missing required params
   useEffect(() => {
     if (!data.discordUsername && !data.discordGlobalName) {
       navigate("/link/discord/error?reason=missing_params");
@@ -53,7 +53,7 @@ export default function DiscordLinkConfirm() {
       return;
     }
 
-    // Verify user_id matches current user
+    // user_id in URL must match currently logged in auth user
     if (data.userId && data.userId !== user.id) {
       toast({
         title: "User mismatch",
@@ -66,8 +66,7 @@ export default function DiscordLinkConfirm() {
 
     setConfirming(true);
     try {
-
-      const result = await profiles.id (supabase, user.id, {
+      const result = await updateUserDiscordFields(supabase, user.id, {
         discord_user_id: data.discordUserId || null,
         discord_username: data.discordUsername || null,
         discord_global_name: data.discordGlobalName || null,
@@ -77,19 +76,18 @@ export default function DiscordLinkConfirm() {
 
       if (!result.success) throw new Error(result.error);
 
-      // Invalidate the user row cache so Settings page refetches
-      queryClient.invalidateQueries({ queryKey: ['usersRow', user.id] });
-      
-      // Also refresh the profile context if needed
+      // refetch whatever your Settings card uses (keep key if you already use it)
+      queryClient.invalidateQueries({ queryKey: ["usersRow", user.id] });
+
       await refreshProfile();
-      
+
       const qs = data.discordUsername ? `?username=${encodeURIComponent(data.discordUsername)}` : "";
       navigate(`/link/discord/success${qs}`);
     } catch (error: any) {
       console.error("Discord link error:", error);
       toast({
         title: "Failed to connect",
-        description: error.message,
+        description: error?.message ?? "Unknown error",
         variant: "destructive",
       });
       navigate("/link/discord/error?reason=exception");
@@ -102,7 +100,6 @@ export default function DiscordLinkConfirm() {
     navigate("/link/discord/error?reason=user_cancelled");
   };
 
-  // Early return if missing params (useEffect will redirect)
   if (!data.discordUsername && !data.discordGlobalName) {
     return (
       <div className="min-h-screen w-full bg-background flex items-center justify-center">
@@ -174,11 +171,7 @@ export default function DiscordLinkConfirm() {
 
             <div className="space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button
-                  onClick={onConfirm}
-                  disabled={confirming}
-                  className="h-11 w-full sm:w-auto"
-                >
+                <Button onClick={onConfirm} disabled={confirming} className="h-11 w-full sm:w-auto">
                   {confirming ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -189,12 +182,7 @@ export default function DiscordLinkConfirm() {
                   )}
                 </Button>
 
-                <Button
-                  onClick={onCancel}
-                  variant="secondary"
-                  disabled={confirming}
-                  className="h-11 w-full sm:w-auto"
-                >
+                <Button onClick={onCancel} variant="secondary" disabled={confirming} className="h-11 w-full sm:w-auto">
                   Cancel
                 </Button>
               </div>
