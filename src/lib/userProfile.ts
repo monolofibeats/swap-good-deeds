@@ -1,62 +1,62 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-export interface UserRow {
+export interface ProfileRow {
+  // In Lovable/Supabase "profiles", the primary key is usually the same UUID as auth.users.id
   id: string;
-  id: string;
+
   discord_user_id: string | null;
   discord_username: string | null;
   discord_global_name: string | null;
   discord_avatar_url: string | null;
   discord_linked_at: string | null;
+
   display_name_source: string | null;
   avatar_source: string | null;
 }
 
 /**
- * Fetches the user row from the `users` table by auth_user_id.
- * @param supabase - The Supabase client instance.
- * @param authUserId - The UUID from supabase.auth.user.id
- * @returns The user row or null if not found.
+ * Fetch a single profile row by the authenticated user's id (auth.users.id).
  */
 export async function fetchUserRowByAuthId(
   supabase: SupabaseClient,
   authUserId: string
-): Promise<UserRow | null> {
+): Promise<ProfileRow | null> {
   const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', authUserId)
+    .from("profiles")
+    .select("*")
+    .eq("id", authUserId)
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching user row:', error);
+    console.error("Error fetching profile row:", error);
     return null;
   }
 
-  return data as UserRow | null;
+  return (data as ProfileRow | null) ?? null;
 }
 
 /**
- * Updates Discord fields on the user row.
+ * Update Discord fields on the current user's profile row (profiles.id = auth user id).
  */
 export async function updateUserDiscordFields(
   supabase: SupabaseClient,
   authUserId: string,
-  fields: {
-    discord_user_id: string | null;
-    discord_username: string | null;
-    discord_global_name: string | null;
-    discord_avatar_url: string | null;
-    discord_linked_at: string | null;
-  }
+  fields: Pick<
+    ProfileRow,
+    | "discord_user_id"
+    | "discord_username"
+    | "discord_global_name"
+    | "discord_avatar_url"
+    | "discord_linked_at"
+  >
 ): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
-    .from('profiles')
+    .from("profiles")
     .update(fields)
-    .eq('id', authUserId);
+    .eq("id", authUserId);
 
   if (error) {
-    console.error('Error updating user Discord fields:', error);
+    console.error("Error updating profile Discord fields:", error);
     return { success: false, error: error.message };
   }
 
@@ -64,7 +64,7 @@ export async function updateUserDiscordFields(
 }
 
 /**
- * Clears Discord connection fields for a user.
+ * Clear Discord connection fields for a user.
  */
 export async function disconnectUserDiscord(
   supabase: SupabaseClient,
