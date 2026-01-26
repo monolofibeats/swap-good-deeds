@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface UserRow {
   id: string;
-  auth_user_id: string;
+  id: string;
   discord_user_id: string | null;
   discord_username: string | null;
   discord_global_name: string | null;
@@ -25,7 +25,7 @@ export async function fetchUserRowByAuthId(
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('auth_user_id', authUserId)
+    .eq('id', authUserId)
     .maybeSingle();
 
   if (error) {
@@ -53,7 +53,7 @@ export async function updateUserDiscordFields(
   const { error } = await supabase
     .from('profiles')
     .update(fields)
-    .eq('auth_user_id', authUserId);
+    .eq('id', authUserId);
 
   if (error) {
     console.error('Error updating user Discord fields:', error);
