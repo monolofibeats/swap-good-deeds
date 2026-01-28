@@ -1,7 +1,7 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface ProfileRow {
-  id: string; // == auth.users.id in Lovable cloud schema
+  id: string; // equals auth.users.id
   discord_user_id: string | null;
   discord_username: string | null;
   discord_global_name: string | null;
@@ -12,9 +12,9 @@ export interface ProfileRow {
 }
 
 /**
- * Fetches the profile row from the `profiles` table by id (auth user id).
+ * Canonical function name expected by most of our code now.
  */
-export async function fetchProfileById(
+export async function fetchProfileRowByAuthId(
   supabase: SupabaseClient,
   authUserId: string
 ): Promise<ProfileRow | null> {
@@ -33,8 +33,16 @@ export async function fetchProfileById(
 }
 
 /**
- * Updates Discord fields on the profile row (match on profiles.id).
+ * Backwards-compatible alias for older imports (useUserRow.ts).
+ * Keeps your Variant B working safely.
  */
+export async function fetchUserRowByAuthId(
+  supabase: SupabaseClient,
+  authUserId: string
+): Promise<ProfileRow | null> {
+  return fetchProfileRowByAuthId(supabase, authUserId);
+}
+
 export async function updateProfileDiscordFields(
   supabase: SupabaseClient,
   authUserId: string,
@@ -44,6 +52,8 @@ export async function updateProfileDiscordFields(
     discord_global_name: string | null;
     discord_avatar_url: string | null;
     discord_linked_at: string | null;
+    display_name_source?: string | null;
+    avatar_source?: string | null;
   }
 ): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
@@ -59,9 +69,6 @@ export async function updateProfileDiscordFields(
   return { success: true };
 }
 
-/**
- * Clears Discord connection fields for a user.
- */
 export async function disconnectProfileDiscord(
   supabase: SupabaseClient,
   authUserId: string
@@ -72,5 +79,7 @@ export async function disconnectProfileDiscord(
     discord_global_name: null,
     discord_avatar_url: null,
     discord_linked_at: null,
+    display_name_source: null,
+    avatar_source: null,
   });
 }
