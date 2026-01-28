@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserRowByAuthId, ProfileRow } from '@/lib/userProfile';
+import { fetchProfileRowByAuthId, ProfileRow } from '@/lib/userProfile';
 
 /**
  * Hook to fetch and cache the user row from `profiles` table.
@@ -11,7 +11,7 @@ export function useUserRow(authUserId: string | undefined) {
     queryKey: ['usersRow', authUserId],
     queryFn: async () => {
       if (!authUserId) return null;
-      return fetchUserRowByAuthId(supabase, authUserId);
+      return fetchProfileRowByAuthId(supabase, authUserId);
     },
     enabled: !!authUserId,
     staleTime: 1000 * 60, // 1 minute
