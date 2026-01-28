@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchProfileRowByAuthId, ProfileRow } from '@/lib/userProfile';
+import { fetchUserRowByAuthId, ProfileRow } from '@/lib/userProfile';
 
 /**
  * Hook to fetch and cache the user row from `profiles` table.
