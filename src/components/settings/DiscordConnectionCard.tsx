@@ -22,7 +22,7 @@ import { Loader2, Link2, Link2Off } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { buildDiscordAuthorizeUrl, isDiscordOAuthConfigured } from "@/lib/discordOAuth";
 import { useUserRow, useInvalidateUserRow } from "@/hooks/useUserRow";
-import { disconnectUserDiscord } from "@/lib/userProfile";
+import { disconnectProfileDiscord } from "@/lib/userProfile";
 
 export function DiscordConnectionCard() {
   const { user } = useAuth();
@@ -58,7 +58,7 @@ export function DiscordConnectionCard() {
     
     setDisconnecting(true);
     try {
-      const result = await disconnectUserDiscord(supabase, user.id);
+      const result = await disconnectProfileDiscord(supabase, user.id);
 
       if (!result.success) throw new Error(result.error);
 
