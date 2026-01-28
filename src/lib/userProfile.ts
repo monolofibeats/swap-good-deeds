@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export interface ProfileRow {
-  id: string; // equals auth.users.id
+export type ProfileRow = {
+  id: string; // usually equals auth.user.id
   discord_user_id: string | null;
   discord_username: string | null;
   discord_global_name: string | null;
@@ -9,10 +9,10 @@ export interface ProfileRow {
   discord_linked_at: string | null;
   display_name_source: string | null;
   avatar_source: string | null;
-}
+};
 
 /**
- * Canonical function name expected by most of our code now.
+ * Fetch profile row by auth user id (profiles.id = auth.user.id)
  */
 export async function fetchProfileRowByAuthId(
   supabase: SupabaseClient,
@@ -33,16 +33,8 @@ export async function fetchProfileRowByAuthId(
 }
 
 /**
- * Backwards-compatible alias for older imports (useUserRow.ts).
- * Keeps your Variant B working safely.
+ * Update Discord fields on profile row.
  */
-export async function fetchUserRowByAuthId(
-  supabase: SupabaseClient,
-  authUserId: string
-): Promise<ProfileRow | null> {
-  return fetchProfileRowByAuthId(supabase, authUserId);
-}
-
 export async function updateProfileDiscordFields(
   supabase: SupabaseClient,
   authUserId: string,
@@ -52,24 +44,20 @@ export async function updateProfileDiscordFields(
     discord_global_name: string | null;
     discord_avatar_url: string | null;
     discord_linked_at: string | null;
-    display_name_source?: string | null;
-    avatar_source?: string | null;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const payload = { id: authUserId, ...fields };
-
   const { error } = await supabase
     .from("profiles")
-    .upsert(payload, { onConflict: "id" });
+    .update(fields)
+    .eq("id", authUserId);
 
   if (error) {
-    console.error("Error upserting profile Discord fields:", error);
+    console.error("Error updating profile Discord fields:", error);
     return { success: false, error: error.message };
   }
 
   return { success: true };
 }
-
 
 export async function disconnectProfileDiscord(
   supabase: SupabaseClient,
@@ -81,7 +69,13 @@ export async function disconnectProfileDiscord(
     discord_global_name: null,
     discord_avatar_url: null,
     discord_linked_at: null,
-    display_name_source: null,
-    avatar_source: null,
   });
 }
+
+/**
+ * Backwards-compatible aliases (in case other files still import "UserRow" or "users" naming)
+ */
+export type UserRow = ProfileRow;
+export const fetchUserRowByAuthId = fetchProfileRowByAuthId;
+export const updateUserDiscordFields = updateProfileDiscordFields;
+export const disconnectUserDiscord = disconnectProfileDiscord;
