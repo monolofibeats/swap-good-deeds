@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       ? JSON.parse(Buffer.from(stateB64, "base64url").toString("utf8"))
       : null;
 
-    const targetUserId = state?.user_id; // should be auth.users.id
+    const targetUserId = state?.user_id;
     if (!targetUserId) {
       return res.redirect(
         302,
@@ -22,19 +22,18 @@ export default async function handler(req, res) {
       );
     }
 
-    // Safety: ensure required envs exist
+    // Required envs (ONLY what we really need now)
     const required = [
       "DISCORD_CLIENT_ID",
       "DISCORD_CLIENT_SECRET",
       "DISCORD_REDIRECT_URI",
-      "SUPABASE_URL",
-      "SUPABASE_SERVICE_ROLE_KEY",
       "APP_BASE_URL",
       "SITE_URL",
       "BOT_API_URL",
       "SWAP_INTERNAL_SECRET",
       "DISCORD_ROLE_LINKED_ID",
     ];
+
     for (const k of required) {
       if (!process.env[k]) {
         return res.redirect(
@@ -65,94 +64,42 @@ export default async function handler(req, res) {
       );
     }
 
-    // Fetch Discord identity
+    // Fetch Discord user
     const meRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     });
     const discord = await meRes.json();
 
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    // Prevent linking this Discord to a different SWAP user
-    // (profiles.id is the auth user id)
-    const conflictRes = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?discord_user_id=eq.${discord.id}&select=id`,
-      {
+    // Assign role via bot (server-side secret safe here)
+    try {
+      await fetch(`${process.env.BOT_API_URL}/assign-role`, {
+        method: "POST",
         headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-        },
-      }
-    );
-
-    const conflict = await conflictRes.json();
-    if (conflict?.[0]?.id && String(conflict[0].id) !== String(targetUserId)) {
-      return res.redirect(
-        302,
-        `${process.env.SITE_URL}/link/discord/error?reason=discord_already_linked`
-      );
-    }
-
-    // Update intended profile row (MATCH ON profiles.id)
-    const updateRes = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?id=eq.${targetUserId}`,
-      {
-        method: "PATCH",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
           "Content-Type": "application/json",
-          Prefer: "return=representation",
+          "x-swap-secret": process.env.SWAP_INTERNAL_SECRET,
         },
         body: JSON.stringify({
           discord_user_id: discord.id,
-          discord_username: discord.username,
-          discord_global_name: discord.global_name || null,
-          discord_avatar_url: discord.avatar
-            ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
-            : null,
-          discord_linked_at: new Date().toISOString(),
+          role_id: process.env.DISCORD_ROLE_LINKED_ID,
         }),
-      }
-    );
-
-    const updatedRows = await updateRes.json();
-    if (!updateRes.ok) {
-      return res.redirect(
-        302,
-        `${process.env.SITE_URL}/link/discord/error?reason=supabase_update_failed`
-      );
-    }
-    if (!updatedRows?.length) {
-      return res.redirect(
-        302,
-        `${process.env.SITE_URL}/link/discord/error?reason=no_matching_profile_row`
-      );
+      });
+    } catch (e) {
+      // role assign failure should NOT kill OAuth flow
+      console.warn("assign-role failed:", e);
     }
 
-    // Assign Discord role via bot API
-    await fetch(`${process.env.BOT_API_URL}/assign-role`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-swap-secret": process.env.SWAP_INTERNAL_SECRET,
-      },
-      body: JSON.stringify({
-        discord_user_id: discord.id,
-        role_id: process.env.DISCORD_ROLE_LINKED_ID,
-      }),
-    });
+    // Redirect to confirm page (frontend will update DB using Supabase client/session)
+    const avatarUrl = discord.avatar
+      ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
+      : "";
 
-    // Redirect to confirm page (IMPORTANT: include discord_user_id because your Confirm page reads it)
     const params = new URLSearchParams({
       user_id: String(targetUserId),
-      discord_user_id: String(discord.id),
+      discord_user_id: discord.id,
       discord_username: discord.username || "",
       discord_global_name: discord.global_name || "",
-      discord_avatar_url: discord.avatar
-        ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
-        : "",
+      discord_avatar_url: avatarUrl,
+      return_to: state?.return_to || "/settings",
     });
 
     return res.redirect(
