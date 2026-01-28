@@ -28,3 +28,5 @@ export function useInvalidateUserRow() {
     queryClient.invalidateQueries({ queryKey: ['usersRow', authUserId] });
   };
 }
+
+export const fetchUserRowByAuthId = fetchProfileRowByAuthId;
