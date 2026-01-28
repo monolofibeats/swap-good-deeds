@@ -56,18 +56,20 @@ export async function updateProfileDiscordFields(
     avatar_source?: string | null;
   }
 ): Promise<{ success: boolean; error?: string }> {
+  const payload = { id: authUserId, ...fields };
+
   const { error } = await supabase
     .from("profiles")
-    .update(fields)
-    .eq("id", authUserId);
+    .upsert(payload, { onConflict: "id" });
 
   if (error) {
-    console.error("Error updating profile Discord fields:", error);
+    console.error("Error upserting profile Discord fields:", error);
     return { success: false, error: error.message };
   }
 
   return { success: true };
 }
+
 
 export async function disconnectProfileDiscord(
   supabase: SupabaseClient,
