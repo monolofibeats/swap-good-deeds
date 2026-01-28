@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { updateUserDiscordFields } from "@/lib/userProfile";
+import { updateProfileDiscordFields } from "@/lib/userProfile";
 
 function safeText(v: string | null) {
   return (v ?? "").trim();
@@ -66,18 +66,18 @@ export default function DiscordLinkConfirm() {
 
     setConfirming(true);
     try {
-      const result = await updateUserDiscordFields(supabase, user.id, {
-        discord_user_id: data.discordUserId || null,
-        discord_username: data.discordUsername || null,
-        discord_global_name: data.discordGlobalName || null,
-        discord_avatar_url: data.avatarUrl || null,
-        discord_linked_at: new Date().toISOString(),
-      });
+      const result = await updateProfileDiscordFields(supabase, user.id, {
+    discord_user_id: data.discordUserId || null,
+    discord_username: data.discordUsername || null,
+    discord_global_name: data.discordGlobalName || null,
+    discord_avatar_url: data.avatarUrl || null,
+    discord_linked_at: new Date().toISOString(),
+  });
 
       if (!result.success) throw new Error(result.error);
 
       // refetch whatever your Settings card uses (keep key if you already use it)
-      queryClient.invalidateQueries({ queryKey: ["usersRow", user.id] });
+      queryClient.invalidateQueries({ queryKey: ['profileRow', user.id] });
 
       await refreshProfile();
 
