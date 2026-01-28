@@ -94,17 +94,16 @@ export default async function handler(req, res) {
       : "";
 
     const params = new URLSearchParams({
-      user_id: String(targetUserId),
-      discord_user_id: discord.id,
-      discord_username: discord.username || "",
-      discord_global_name: discord.global_name || "",
-      discord_avatar_url: avatarUrl,
-      return_to: state?.return_to || "/settings",
-    });
+  user_id: String(targetUserId),
+  discord_user_id: String(discord.id),        // <-- DAS HIER IST DER FIX
+  discord_username: discord.username || "",
+  discord_global_name: discord.global_name || "",
+  discord_avatar_url: discord.avatar
+    ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
+    : "",
+});
 
-    return res.redirect(
-      302,
-      `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`
+return res.redirect(302, `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`);
     );
   } catch (e) {
     return res.redirect(
