@@ -64,6 +64,11 @@ export default function DiscordLinkConfirm() {
       return;
     }
 
+    if (!data.discordUserId) {
+  navigate("/link/discord/error?reason=missing_discord_user_id");
+  return;
+}
+
     setConfirming(true);
     try {
       const result = await updateProfileDiscordFields(supabase, user.id, {
