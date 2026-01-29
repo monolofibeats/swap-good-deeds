@@ -4,10 +4,7 @@ export default async function handler(req, res) {
     const stateB64 = req.query.state || "";
 
     if (!code) {
-      return res.redirect(
-        302,
-        `${process.env.SITE_URL}/link/discord/error?reason=missing_code`
-      );
+      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_code`);
     }
 
     const state = stateB64
@@ -16,13 +13,9 @@ export default async function handler(req, res) {
 
     const targetUserId = state?.user_id;
     if (!targetUserId) {
-      return res.redirect(
-        302,
-        `${process.env.SITE_URL}/link/discord/error?reason=missing_state_user`
-      );
+      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_state_user`);
     }
 
-    // Required envs (ONLY what we really need now)
     const required = [
       "DISCORD_CLIENT_ID",
       "DISCORD_CLIENT_SECRET",
@@ -31,19 +24,14 @@ export default async function handler(req, res) {
       "SITE_URL",
       "BOT_API_URL",
       "SWAP_INTERNAL_SECRET",
-      "DISCORD_ROLE_LINKED_ID",
     ];
-
     for (const k of required) {
       if (!process.env[k]) {
-        return res.redirect(
-          302,
-          `${process.env.SITE_URL}/link/discord/error?reason=missing_env_${k}`
-        );
+        return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=missing_env_${k}`);
       }
     }
 
-    // Exchange code for token
+    // Exchange code -> token (must include identify + guilds.join in the original authorize URL)
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -58,21 +46,19 @@ export default async function handler(req, res) {
 
     const token = await tokenRes.json();
     if (!token?.access_token) {
-      return res.redirect(
-        302,
-        `${process.env.SITE_URL}/link/discord/error?reason=token_exchange_failed`
-      );
+      return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=token_exchange_failed`);
     }
 
-    // Fetch Discord user
+    // Fetch Discord user identity
     const meRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     });
     const discord = await meRes.json();
 
-    // Assign role via bot (server-side secret safe here)
+    // Join guild + assign role via your bot API
+    // (If join fails, we still continue the SWAP link flow — user can retry later)
     try {
-      await fetch(`${process.env.BOT_API_URL}/assign-role`, {
+      await fetch(`${process.env.BOT_API_URL}/join-and-assign`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,19 +66,18 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           discord_user_id: discord.id,
-          role_id: process.env.DISCORD_ROLE_LINKED_ID,
+          access_token: token.access_token,
         }),
       });
     } catch (e) {
-      // role assign failure should NOT kill OAuth flow
-      console.warn("assign-role failed:", e);
+      console.warn("join-and-assign failed:", e);
     }
 
-    // Redirect to confirm page (frontend will update DB using Supabase client/session)
     const avatarUrl = discord.avatar
       ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.png?size=256`
       : "";
 
+    // Forward to confirm page (frontend writes to DB)
     const params = new URLSearchParams({
       user_id: String(targetUserId),
       discord_user_id: discord.id,
@@ -102,14 +87,8 @@ export default async function handler(req, res) {
       return_to: state?.return_to || "/settings",
     });
 
-    return res.redirect(
-      302,
-      `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`
-    );
+    return res.redirect(302, `${process.env.APP_BASE_URL}/link/discord/confirm?${params.toString()}`);
   } catch (e) {
-    return res.redirect(
-      302,
-      `${process.env.SITE_URL}/link/discord/error?reason=exception`
-    );
+    return res.redirect(302, `${process.env.SITE_URL}/link/discord/error?reason=exception`);
   }
 }
